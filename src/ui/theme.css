@@ -1,0 +1,47 @@
+:root{
+  --bg:#EFE4D4; --panel:rgba(255,248,238,.9); --ink:#3A2A22; --ink-soft:#80675A; --line:#E3D2BD;
+  --accent:#B8541B; --accent-ink:#FFFFFF; --scene-bg:#EBDDC9; --field:#F8EEDF;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  font-family:"Bricolage Grotesque", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color:var(--ink);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#1E1612; --panel:rgba(44,32,26,.92); --ink:#F6E8D8; --ink-soft:#B9A08C; --line:#4A382E;
+    --accent:#FFB36B; --accent-ink:#2A1A10; --scene-bg:#241A16; --field:#382A22;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#1E1612; --panel:rgba(44,32,26,.92); --ink:#F6E8D8; --ink-soft:#B9A08C; --line:#4A382E;
+  --accent:#FFB36B; --accent-ink:#2A1A10; --scene-bg:#241A16; --field:#382A22;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{height:100%; scroll-padding-top:env(safe-area-inset-top,0px)}
+body{height:100%; margin:0; background:var(--bg); overflow:hidden; -webkit-font-smoothing:antialiased}
+#root{height:100%}
+#stage{position:fixed; inset:0}
+#stage canvas{display:block; touch-action:none; cursor:grab}
+#stage canvas:active{cursor:grabbing}
+button,input{font:inherit; color:inherit}
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+
+.panel{background:var(--panel); border:1px solid var(--line); border-radius:14px; backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px)}
+
+/* floating name tags, moved each frame by the scene's TagProjector */
+#labels{position:fixed; inset:0; pointer-events:none; overflow:hidden; z-index:5}
+.tag{position:absolute; left:0; top:0; pointer-events:auto; display:flex; align-items:center; gap:6px; padding:4px 9px 4px 7px; border-radius:999px; background:var(--panel); border:1px solid var(--line); font-size:.8rem; white-space:nowrap; cursor:pointer; will-change:transform; visibility:hidden}
+.tag .d{width:9px; height:9px; border-radius:50%}
+.tag .nm{font-weight:700}
+.tag .pos{color:var(--ink-soft)}
+.tag .pos::before{content:"·"; margin-right:6px}
+.tag .sub{color:var(--ink-soft)}
+.tag .bub{font-weight:700}
+.tag.sel{border-color:var(--accent)}
+.tag.router{cursor:default}
+.tag.room{cursor:default; pointer-events:none; font-size:.68rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft); padding:3px 10px}
+@media (max-width:760px){ .tag .sub,.tag .pos{display:none} .tag.router .sub{display:inline} }
+
+/* From outside the building you cannot see the people, so their tags hide too. */
+#labels.outside .tag:not(.room):not(.router){opacity:0; pointer-events:none}
+#labels .tag{transition:opacity .4s}

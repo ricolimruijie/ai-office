@@ -1,0 +1,1789 @@
+v<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>Agent Office</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #e4e6ee;
+        --panel: rgba(255, 255, 255, 0.88);
+        --ink: #1e2433;
+        --ink-soft: #5b6478;
+        --line: #d3d7e3;
+        --accent: #4b5bd6;
+        --accent-ink: #ffffff;
+        --scene-bg: #dcdfea;
+        --field: #f3f4f8;
+        box-sizing: border-box;
+        padding-top: env(safe-area-inset-top, 0px);
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+        font-family:
+          "Bricolage Grotesque",
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          Roboto,
+          sans-serif;
+        color: var(--ink);
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          --bg: #161a24;
+          --panel: rgba(28, 33, 46, 0.9);
+          --ink: #e8ebf3;
+          --ink-soft: #9aa3b8;
+          --line: #2f3649;
+          --accent: #8e9bff;
+          --accent-ink: #141826;
+          --scene-bg: #1b2030;
+          --field: #232a3a;
+        }
+      }
+      :root[data-theme="dark"] {
+        --bg: #161a24;
+        --panel: rgba(28, 33, 46, 0.9);
+        --ink: #e8ebf3;
+        --ink-soft: #9aa3b8;
+        --line: #2f3649;
+        --accent: #8e9bff;
+        --accent-ink: #141826;
+        --scene-bg: #1b2030;
+        --field: #232a3a;
+      }
+      *,
+      *::before,
+      *::after {
+        box-sizing: inherit;
+      }
+      html {
+        height: 100%;
+        scroll-padding-top: env(safe-area-inset-top, 0px);
+      }
+      body {
+        height: 100%;
+        margin: 0;
+        background: var(--bg);
+        overflow: hidden;
+        -webkit-font-smoothing: antialiased;
+      }
+      #stage {
+        position: fixed;
+        inset: 0;
+      }
+      #stage canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+        touch-action: none;
+        cursor: grab;
+      }
+      #stage canvas:active {
+        cursor: grabbing;
+      }
+      button,
+      input {
+        font: inherit;
+        color: inherit;
+      }
+      :focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+      }
+
+      .topbar {
+        position: fixed;
+        top: calc(env(safe-area-inset-top, 0px) + 12px);
+        left: 12px;
+        right: 12px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        pointer-events: none;
+      }
+      .brand {
+        pointer-events: auto;
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        padding: 10px 16px;
+      }
+      .brand h1 {
+        margin: 0;
+        font-size: 1.35rem;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+      }
+      .brand .src {
+        font-size: 0.85rem;
+        color: var(--ink-soft);
+      }
+      .top-actions {
+        margin-left: auto;
+        display: flex;
+        gap: 8px;
+        pointer-events: auto;
+      }
+      .btn {
+        border: 1px solid var(--line);
+        background: var(--panel);
+        border-radius: 10px;
+        padding: 9px 14px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        font-weight: 600;
+      }
+      .btn:hover {
+        border-color: var(--accent);
+      }
+      .btn.primary {
+        background: var(--accent);
+        color: var(--accent-ink);
+        border-color: var(--accent);
+      }
+      .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .roster {
+        position: fixed;
+        left: 12px;
+        top: calc(env(safe-area-inset-top, 0px) + 76px);
+        width: 270px;
+        max-height: calc(
+          100% - 100px - env(safe-area-inset-top, 0px) -
+            env(safe-area-inset-bottom, 0px)
+        );
+        overflow: auto;
+        padding: 14px;
+      }
+      .roster h2 {
+        margin: 2px 4px 2px;
+        font-size: 1rem;
+      }
+      .roster .hint {
+        margin: 0 4px 10px;
+        font-size: 0.85rem;
+        color: var(--ink-soft);
+      }
+      .agent-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .agent-btn {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 14px 1fr auto;
+        align-items: center;
+        gap: 10px;
+        text-align: left;
+        background: transparent;
+        border: 1px solid transparent;
+        border-radius: 10px;
+        padding: 8px 10px;
+        cursor: pointer;
+      }
+      .agent-btn:hover {
+        background: var(--field);
+      }
+      .agent-btn[aria-pressed="true"] {
+        background: var(--field);
+        border-color: var(--accent);
+      }
+      .swatch {
+        width: 14px;
+        height: 14px;
+        border-radius: 4px;
+        display: inline-block;
+      }
+      .agent-btn .nm {
+        font-weight: 600;
+        line-height: 1.15;
+      }
+      .agent-btn .rl {
+        display: block;
+        font-size: 0.8rem;
+        color: var(--ink-soft);
+        font-weight: 400;
+      }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.78rem;
+        padding: 3px 8px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        white-space: nowrap;
+      }
+      .pill i {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+      }
+      .feed-wrap {
+        margin-top: 14px;
+        border-top: 1px solid var(--line);
+        padding-top: 10px;
+      }
+      .feed-wrap h3 {
+        margin: 0 4px 6px;
+        font-size: 0.9rem;
+      }
+      .feed {
+        list-style: none;
+        margin: 0;
+        padding: 0 4px;
+        font-size: 0.8rem;
+        color: var(--ink-soft);
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+      .feed b {
+        color: var(--ink);
+        font-weight: 600;
+      }
+
+      .drawer {
+        position: fixed;
+        right: 12px;
+        top: calc(env(safe-area-inset-top, 0px) + 76px);
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+        width: 350px;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .drawer[hidden] {
+        display: none;
+      }
+      .drawer-head {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .drawer-head .swatch {
+        width: 20px;
+        height: 20px;
+        border-radius: 6px;
+      }
+      .drawer-head h2 {
+        margin: 0;
+        font-size: 1.3rem;
+        line-height: 1.1;
+      }
+      .muted {
+        margin: 2px 0 0;
+        color: var(--ink-soft);
+        font-size: 0.9rem;
+      }
+      .icon-btn {
+        margin-left: auto;
+        width: 34px;
+        height: 34px;
+        border-radius: 9px;
+        border: 1px solid var(--line);
+        background: transparent;
+        cursor: pointer;
+        font-size: 1.2rem;
+        line-height: 1;
+      }
+      .block h3 {
+        margin: 0 0 6px;
+        font-size: 0.9rem;
+      }
+      .block p {
+        margin: 0;
+        font-size: 0.95rem;
+      }
+      .assign label {
+        display: block;
+        font-weight: 600;
+        font-size: 0.9rem;
+        margin-bottom: 6px;
+      }
+      .assign-row {
+        display: flex;
+        gap: 8px;
+      }
+      .assign input {
+        flex: 1;
+        min-width: 0;
+        border: 1px solid var(--line);
+        background: var(--field);
+        border-radius: 10px;
+        padding: 9px 11px;
+      }
+      .assign .hint {
+        margin: 6px 0 0;
+        font-size: 0.8rem;
+        color: var(--ink-soft);
+        min-height: 1em;
+      }
+      .grow {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+      }
+      .log {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        overflow: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+        font-size: 0.85rem;
+      }
+      .log li {
+        display: grid;
+        grid-template-columns: 62px 1fr;
+        gap: 8px;
+      }
+      .log time {
+        color: var(--ink-soft);
+        font-variant-numeric: tabular-nums;
+      }
+
+      #labels {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        overflow: hidden;
+      }
+      .tag {
+        position: absolute;
+        left: 0;
+        top: 0;
+        pointer-events: auto;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 9px 4px 7px;
+        border-radius: 999px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        font-size: 0.8rem;
+        white-space: nowrap;
+        cursor: pointer;
+        will-change: transform;
+      }
+      .tag .d {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+      }
+      .tag .nm {
+        font-weight: 700;
+      }
+      .tag .sub {
+        color: var(--ink-soft);
+      }
+      .tag .bub {
+        font-weight: 700;
+      }
+      .tag.sel {
+        border-color: var(--accent);
+      }
+      .tag.router {
+        cursor: default;
+      }
+
+      @media (max-width: 760px) {
+        .brand .src {
+          display: none;
+        }
+        .btn {
+          padding: 8px 10px;
+          font-size: 0.82rem;
+          white-space: nowrap;
+        }
+        .brand h1 {
+          font-size: 1.1rem;
+        }
+        .brand {
+          padding: 9px 12px;
+        }
+        .roster {
+          top: auto;
+          bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
+          left: 8px;
+          right: 8px;
+          width: auto;
+          max-height: none;
+          padding: 8px;
+          overflow-x: auto;
+          overflow-y: hidden;
+        }
+        .roster h2,
+        .roster .hint,
+        .feed-wrap {
+          display: none;
+        }
+        .agent-list {
+          flex-direction: row;
+        }
+        .agent-btn {
+          min-width: 160px;
+        }
+        .drawer {
+          left: 8px;
+          right: 8px;
+          width: auto;
+          top: auto;
+          height: 46%;
+          bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
+        }
+        .tag .sub {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="stage"></div>
+    <div id="labels"></div>
+
+    <header class="topbar">
+      <div class="brand panel">
+        <h1>Agent Office</h1>
+        <span class="src" id="srcLabel">Running on mock data</span>
+      </div>
+      <div class="top-actions">
+        <button class="btn" id="resetView">Reset view</button>
+        <button class="btn" id="toggleSim" aria-pressed="true">
+          Pause auto activity
+        </button>
+      </div>
+    </header>
+
+    <aside class="roster panel" aria-label="Agents">
+      <h2>Agents</h2>
+      <p class="hint">Select an agent to open its desk.</p>
+      <ul class="agent-list" id="agentList"></ul>
+      <div class="feed-wrap">
+        <h3>Recent activity</h3>
+        <ul class="feed" id="feed"></ul>
+      </div>
+    </aside>
+
+    <section class="drawer panel" id="drawer" hidden aria-label="Agent details">
+      <div class="drawer-head">
+        <span class="swatch" id="dSwatch"></span>
+        <div>
+          <h2 id="dName"></h2>
+          <p class="muted" id="dRole"></p>
+        </div>
+        <button class="icon-btn" id="dClose" aria-label="Close agent panel">
+          ×
+        </button>
+      </div>
+      <div><span class="pill" id="dStatus"></span></div>
+      <div class="block">
+        <h3>Current task</h3>
+        <p id="dTask"></p>
+      </div>
+      <form class="assign" id="assignForm">
+        <label for="taskInput">Give a task</label>
+        <div class="assign-row">
+          <input
+            id="taskInput"
+            placeholder="Summarize today's scan findings"
+            autocomplete="off"
+          />
+          <button class="btn primary" type="submit" id="assignBtn">
+            Assign
+          </button>
+        </div>
+        <p class="hint" id="assignHint"></p>
+      </form>
+      <div class="block grow">
+        <h3>Activity</h3>
+        <ol class="log" id="dLog"></ol>
+      </div>
+    </section>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+      (function () {
+        "use strict";
+        const $ = (s) => document.querySelector(s);
+        const reduceMotion = matchMedia(
+          "(prefers-reduced-motion: reduce)",
+        ).matches;
+        const MOTION = reduceMotion ? 0.35 : 1;
+
+        /* ------------------------------------------------------------------
+   EVENT CONTRACT (the agent layer will send these later)
+   { type:"agent.status",  agentId, status:"idle|thinking|working|done|error", task? }
+   { type:"agent.log",     agentId, message }
+   { type:"agent.handoff", from, to, task }
+   { type:"model.call",    agentId, tier? }
+   Every event also carries ts (ms). Feed them into office.ingest(event).
+------------------------------------------------------------------- */
+
+        const STATUS = {
+          idle: { label: "Idle", color: "#8E97A8" },
+          thinking: { label: "Thinking", color: "#E9A824" },
+          working: { label: "Working", color: "#3C7DFF" },
+          done: { label: "Done", color: "#2FA872" },
+          error: { label: "Error", color: "#E5484D" },
+        };
+        const AGENTS = [
+          {
+            id: "atlas",
+            name: "Atlas",
+            role: "Scan triage",
+            color: "#5B6CFF",
+            tasks: [
+              "Triage new web scan findings",
+              "Deduplicate critical findings",
+              "Re-rank findings on public facing targets",
+            ],
+          },
+          {
+            id: "lyra",
+            name: "Lyra",
+            role: "Report writer",
+            color: "#E0638A",
+            tasks: [
+              "Draft executive summary",
+              "Write remediation steps",
+              "Format client report",
+            ],
+          },
+          {
+            id: "nova",
+            name: "Nova",
+            role: "QA tester",
+            color: "#21A99A",
+            tasks: [
+              "Run regression on scan module",
+              "Check report export filters",
+              "Verify login flow",
+            ],
+          },
+          {
+            id: "orbit",
+            name: "Orbit",
+            role: "Docs keeper",
+            color: "#EE8636",
+            tasks: [
+              "Update user guide",
+              "Sync PRD changes",
+              "Write release notes",
+            ],
+          },
+          {
+            id: "pixel",
+            name: "Pixel",
+            role: "UI reviewer",
+            color: "#9C6ADE",
+            tasks: [
+              "Review dashboard spacing",
+              "Check dark mode contrast",
+              "Audit empty states",
+            ],
+          },
+          {
+            id: "sentry",
+            name: "Sentry",
+            role: "Code reviewer",
+            color: "#4C9A3F",
+            tasks: [
+              "Review backend PR",
+              "Check API auth handling",
+              "Flag risky dependencies",
+            ],
+          },
+        ];
+        const DESKS = [
+          [-4.5, -2.6],
+          [0, -2.6],
+          [4.5, -2.6],
+          [-4.5, 1.8],
+          [0, 1.8],
+          [4.5, 1.8],
+        ];
+        const AISLE_Z = -0.6,
+          WALK_SPEED = 1.7;
+        const ROUTER_POS = new THREE.Vector3(6.7, 1.05, -5.35);
+
+        /* ---------------- renderer and scene ---------------- */
+        const stage = $("#stage");
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        renderer.setSize(innerWidth, innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        stage.appendChild(renderer.domElement);
+        const canvas = renderer.domElement;
+
+        const scene = new THREE.Scene();
+        function syncTheme() {
+          const c =
+            getComputedStyle(document.documentElement)
+              .getPropertyValue("--scene-bg")
+              .trim() || "#DCDFEA";
+          scene.background = new THREE.Color(c);
+        }
+        syncTheme();
+        matchMedia("(prefers-color-scheme: dark)").addEventListener(
+          "change",
+          syncTheme,
+        );
+
+        const camera = new THREE.PerspectiveCamera(
+          35,
+          innerWidth / innerHeight,
+          0.1,
+          200,
+        );
+
+        scene.add(new THREE.HemisphereLight(0xffffff, 0x7a83a0, 0.5));
+        const sun = new THREE.DirectionalLight(0xffffff, 0.6);
+        sun.position.set(8, 14, 7);
+        sun.castShadow = true;
+        sun.shadow.mapSize.set(2048, 2048);
+        Object.assign(sun.shadow.camera, {
+          left: -12,
+          right: 12,
+          top: 12,
+          bottom: -12,
+          near: 1,
+          far: 40,
+        });
+        scene.add(sun);
+
+        const mat = (c, o) =>
+          new THREE.MeshStandardMaterial(
+            Object.assign({ color: c, roughness: 0.8 }, o || {}),
+          );
+        function box(w, h, d, m, x, y, z, parent) {
+          const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m);
+          b.position.set(x, y, z);
+          b.castShadow = true;
+          b.receiveShadow = true;
+          (parent || scene).add(b);
+          return b;
+        }
+        function cyl(rt, rb, h, m, x, y, z, parent, seg) {
+          const c = new THREE.Mesh(
+            new THREE.CylinderGeometry(rt, rb, h, seg || 16),
+            m,
+          );
+          c.position.set(x, y, z);
+          c.castShadow = true;
+          c.receiveShadow = true;
+          (parent || scene).add(c);
+          return c;
+        }
+
+        /* ---------------- room ---------------- */
+        const floor = box(16, 0.2, 12, mat("#9FA9BE"), 0, -0.1, 0);
+        floor.castShadow = false;
+        box(13.5, 0.02, 1.5, mat("#7F8DB0"), 0, 0.01, AISLE_Z).castShadow =
+          false;
+        const wallM = mat("#D5D9E4");
+        box(16, 3.2, 0.2, wallM, 0, 1.6, -6.1);
+        box(0.2, 3.2, 12, wallM, -8.1, 1.6, 0);
+        box(16, 0.14, 0.24, mat("#C7CCDA"), 0, 0.07, -5.98);
+        box(0.24, 0.14, 12, mat("#C7CCDA"), -7.98, 0.07, 0);
+        const glassM = mat("#BFD7F5", {
+          emissive: "#9CC2F0",
+          emissiveIntensity: 0.35,
+          roughness: 0.2,
+        });
+        [-4.5, 0, 4.5].forEach((x) => {
+          box(2.6, 1.4, 0.06, mat("#AEB5C6"), x, 1.95, -5.98);
+          box(2.4, 1.2, 0.07, glassM, x, 1.95, -5.97);
+          box(0.05, 1.2, 0.08, mat("#AEB5C6"), x, 1.95, -5.95);
+        });
+        // whiteboard on the side wall
+        const wb = new THREE.Group();
+        wb.position.set(-7.95, 1.75, -0.6);
+        wb.rotation.y = Math.PI / 2;
+        scene.add(wb);
+        box(3.2, 1.4, 0.05, mat("#AEB5C6"), 0, 0, 0, wb);
+        box(
+          3.05,
+          1.25,
+          0.06,
+          mat("#FAFBFD", { roughness: 0.3 }),
+          0,
+          0,
+          0.01,
+          wb,
+        );
+        [
+          ["#3C7DFF", -0.9, 0.35, 1.1],
+          ["#E0638A", -0.6, 0.1, 1.6],
+          ["#2FA872", 0.3, -0.2, 1.9],
+          ["#E9A824", 0.8, 0.38, 0.8],
+        ].forEach(([c, x, y, w]) => box(w, 0.05, 0.02, mat(c), x, y, 0.05, wb));
+        // plants
+        function plant(x, z, s) {
+          cyl(0.22 * s, 0.17 * s, 0.4 * s, mat("#C9876B"), x, 0.2 * s, z);
+          const leaf = mat("#4F9A62", { roughness: 0.9 });
+          [
+            [0, 0.62, 0, 0.32],
+            [0.14, 0.78, 0.06, 0.24],
+            [-0.12, 0.8, -0.04, 0.22],
+            [0, 0.95, 0, 0.18],
+          ].forEach(([dx, y, dz, r]) => {
+            const s2 = new THREE.Mesh(
+              new THREE.SphereGeometry(r * s, 12, 10),
+              leaf,
+            );
+            s2.position.set(x + dx * s, y * s, z + dz * s);
+            s2.castShadow = true;
+            scene.add(s2);
+          });
+        }
+        plant(-7.3, -5.3, 1.2);
+        plant(-7.3, 5.2, 1);
+        plant(7.3, 5.2, 1.1);
+        plant(2.3, -5.4, 0.9);
+
+        /* ---------------- model router rack ---------------- */
+        box(
+          1.0,
+          2.1,
+          0.7,
+          mat("#2B3142", { roughness: 0.5 }),
+          ROUTER_POS.x,
+          ROUTER_POS.y,
+          ROUTER_POS.z,
+        );
+        const leds = [];
+        for (let r = 0; r < 8; r++)
+          for (let c = 0; c < 3; c++) {
+            const m = mat("#5CE0A0", {
+              emissive: "#3FD18C",
+              emissiveIntensity: 0.3,
+            });
+            box(
+              0.16,
+              0.05,
+              0.02,
+              m,
+              ROUTER_POS.x - 0.26 + c * 0.26,
+              ROUTER_POS.y - 0.75 + r * 0.22,
+              ROUTER_POS.z + 0.36,
+            );
+            leds.push({
+              m,
+              phase: Math.random() * 10,
+              speed: 1 + Math.random() * 3,
+            });
+          }
+        let routerFlash = 0,
+          routerCalls = 0;
+        const routerTop = new THREE.Vector3(
+          ROUTER_POS.x,
+          ROUTER_POS.y + 1.0,
+          ROUTER_POS.z + 0.3,
+        );
+
+        /* ---------------- desks ---------------- */
+        function buildDesk(dx, dz) {
+          const wood = mat("#C9A27A"),
+            side = mat("#B08861");
+          box(2.0, 0.08, 1.0, wood, dx, 0.76, dz);
+          box(0.06, 0.72, 0.92, side, dx - 0.96, 0.36, dz);
+          box(0.06, 0.72, 0.92, side, dx + 0.96, 0.36, dz);
+          box(1.9, 0.4, 0.04, side, dx, 0.52, dz + 0.46);
+          // laptop, lid back faces the camera
+          box(
+            0.52,
+            0.03,
+            0.36,
+            mat("#8C93A6", { roughness: 0.4 }),
+            dx,
+            0.795,
+            dz - 0.12,
+          );
+          const hinge = new THREE.Group();
+          hinge.position.set(dx, 0.81, dz + 0.06);
+          hinge.rotation.x = 0.22;
+          scene.add(hinge);
+          box(
+            0.52,
+            0.36,
+            0.02,
+            mat("#9AA1B3", { roughness: 0.35 }),
+            0,
+            0.18,
+            0,
+            hinge,
+          );
+          const logoMat = mat(STATUS.idle.color, {
+            emissive: STATUS.idle.color,
+            emissiveIntensity: 0.8,
+          });
+          const logo = new THREE.Mesh(
+            new THREE.CircleGeometry(0.055, 20),
+            logoMat,
+          );
+          logo.position.set(0, 0.19, 0.012);
+          hinge.add(logo);
+          cyl(0.05, 0.045, 0.11, mat("#F2F3F7"), dx + 0.6, 0.855, dz - 0.05);
+          const inbox = box(
+            0.3,
+            0.05,
+            0.38,
+            mat("#FFFFFF", { roughness: 0.6 }),
+            dx - 0.62,
+            0.825,
+            dz + 0.02,
+          );
+          inbox.visible = false;
+          // chair
+          const chairM = mat("#3A4256", { roughness: 0.6 });
+          box(0.56, 0.08, 0.52, chairM, dx, 0.4, dz - 0.95);
+          box(0.56, 0.62, 0.07, chairM, dx, 0.76, dz - 1.24);
+          cyl(0.04, 0.04, 0.36, mat("#5A6276"), dx, 0.18, dz - 0.95);
+          return { logoMat, inbox };
+        }
+
+        /* ---------------- agent characters ---------------- */
+        function limb(len, rad, m) {
+          const pivot = new THREE.Group();
+          const l = new THREE.Mesh(
+            new THREE.CylinderGeometry(rad, rad, len, 10),
+            m,
+          );
+          l.position.y = -len / 2;
+          l.castShadow = true;
+          pivot.add(l);
+          return pivot;
+        }
+        const agentMeshes = [];
+        function buildAgent(cfg) {
+          const g = new THREE.Group();
+          const bodyM = mat(cfg.color, { roughness: 0.55 });
+          const shellM = mat("#EEF0F5", { roughness: 0.45 });
+          const darkM = mat("#252B3A", { roughness: 0.4 });
+          const eyeM = mat("#C9F5FF", {
+            emissive: "#7FE6FF",
+            emissiveIntensity: 1,
+          });
+          const antM = mat(STATUS.idle.color, {
+            emissive: STATUS.idle.color,
+            emissiveIntensity: 0.9,
+          });
+
+          const legL = limb(0.42, 0.075, darkM);
+          legL.position.set(-0.11, 0.44, 0);
+          g.add(legL);
+          const legR = limb(0.42, 0.075, darkM);
+          legR.position.set(0.11, 0.44, 0);
+          g.add(legR);
+          cyl(0.24, 0.29, 0.56, bodyM, 0, 0.72, 0, g, 20);
+          box(0.22, 0.14, 0.04, shellM, 0, 0.78, 0.255, g);
+          const armL = limb(0.38, 0.06, bodyM);
+          armL.position.set(-0.33, 0.94, 0);
+          g.add(armL);
+          const armR = limb(0.38, 0.06, bodyM);
+          armR.position.set(0.33, 0.94, 0);
+          g.add(armR);
+          [armL, armR].forEach((a) => {
+            const h = new THREE.Mesh(
+              new THREE.SphereGeometry(0.07, 10, 8),
+              shellM,
+            );
+            h.position.y = -0.4;
+            h.castShadow = true;
+            a.add(h);
+          });
+          const head = new THREE.Group();
+          head.position.y = 1.24;
+          g.add(head);
+          const hm = new THREE.Mesh(
+            new THREE.SphereGeometry(0.27, 20, 16),
+            shellM,
+          );
+          hm.castShadow = true;
+          head.add(hm);
+          box(0.38, 0.16, 0.1, darkM, 0, 0.02, 0.21, head);
+          const eyes = new THREE.Group();
+          head.add(eyes);
+          [-0.075, 0.075].forEach((x) => {
+            const e = new THREE.Mesh(
+              new THREE.SphereGeometry(0.035, 10, 8),
+              eyeM,
+            );
+            e.position.set(x, 0.025, 0.265);
+            eyes.add(e);
+          });
+          cyl(0.015, 0.015, 0.14, darkM, 0, 0.33, 0, head, 6);
+          const bulb = new THREE.Mesh(
+            new THREE.SphereGeometry(0.055, 12, 10),
+            antM,
+          );
+          bulb.position.y = 0.43;
+          head.add(bulb);
+          const doc = box(0.26, 0.02, 0.34, mat("#FFFFFF"), 0, 0.8, 0.42, g);
+          doc.rotation.x = -0.3;
+          doc.visible = false;
+
+          g.traverse((o) => {
+            if (o.isMesh) {
+              o.userData.agentId = cfg.id;
+              agentMeshes.push(o);
+            }
+          });
+          return { group: g, legL, legR, armL, armR, head, eyes, antM, doc };
+        }
+
+        const agents = AGENTS.map((cfg, i) => {
+          const [dx, dz] = DESKS[i];
+          const deskParts = buildDesk(dx, dz);
+          const parts = buildAgent(cfg);
+          const home = { x: dx, z: dz - 0.95 };
+          parts.group.position.set(home.x, 0, home.z);
+          scene.add(parts.group);
+          return Object.assign(parts, {
+            cfg,
+            idx: i,
+            home,
+            deskParts,
+            status: "idle",
+            task: null,
+            log: [],
+            mode: "seated",
+            path: [],
+            onArrive: null,
+            carry: false,
+            heading: 0,
+            statusSince: 0,
+            walkLabel: null,
+            phase: Math.random() * 10,
+            walkPhase: 0,
+          });
+        });
+        const byId = Object.fromEntries(agents.map((a) => [a.cfg.id, a]));
+
+        const selRing = new THREE.Mesh(
+          new THREE.RingGeometry(0.48, 0.58, 40),
+          new THREE.MeshBasicMaterial({
+            color: "#4B5BD6",
+            transparent: true,
+            opacity: 0.85,
+          }),
+        );
+        selRing.rotation.x = -Math.PI / 2;
+        selRing.position.y = 0.02;
+        selRing.visible = false;
+        scene.add(selRing);
+
+        /* ---------------- walking paths ---------------- */
+        function routeTo(i, j) {
+          const A = DESKS[i],
+            B = DESKS[j];
+          return [
+            { x: A[0] + 1.3, z: A[1] - 0.95 },
+            { x: A[0] + 1.3, z: AISLE_Z },
+            { x: B[0] + 1.3, z: AISLE_Z },
+            { x: B[0] + 1.3, z: B[1] + 0.85 },
+            { x: B[0] + 0.6, z: B[1] + 0.85 },
+          ];
+        }
+        function routeHome(i, j) {
+          const r = routeTo(i, j).slice(0, -1).reverse();
+          r.push({ x: DESKS[i][0], z: DESKS[i][1] - 0.95 });
+          return r;
+        }
+        function pathLen(start, pts) {
+          let d = 0,
+            p = start;
+          pts.forEach((q) => {
+            d += Math.hypot(q.x - p.x, q.z - p.z);
+            p = q;
+          });
+          return d;
+        }
+        function walkTime(i, j) {
+          const start = { x: DESKS[i][0], z: DESKS[i][1] - 0.95 };
+          return pathLen(start, routeTo(i, j)) / WALK_SPEED;
+        }
+        function startWalk(a, pts, cb) {
+          a.path = pts.slice();
+          a.mode = "walking";
+          a.onArrive = cb;
+        }
+
+        function startHandoff(from, to) {
+          if (from.mode !== "seated" || from === to) return;
+          from.carry = true;
+          from.walkLabel = "Taking task to " + to.cfg.name;
+          updateTag(from);
+          startWalk(from, routeTo(from.idx, to.idx), () => {
+            from.mode = "standing";
+            from.heading = Math.PI;
+            setTimeout(() => {
+              from.carry = false;
+              to.deskParts.inbox.visible = true;
+              from.walkLabel = "Heading back";
+              updateTag(from);
+              startWalk(from, routeHome(from.idx, to.idx), () => {
+                from.mode = "seated";
+                from.heading = 0;
+                from.walkLabel = null;
+                updateTag(from);
+              });
+            }, 1200);
+          });
+        }
+
+        /* ---------------- model call pulses ---------------- */
+        const pulses = [];
+        const pulseGeo = new THREE.SphereGeometry(0.07, 10, 8);
+        function pulse(a) {
+          const m = new THREE.Mesh(
+            pulseGeo,
+            new THREE.MeshBasicMaterial({ color: a.cfg.color }),
+          );
+          const p0 = new THREE.Vector3(
+            a.group.position.x,
+            1.8,
+            a.group.position.z,
+          );
+          const p1 = routerTop.clone();
+          const c = p0.clone().lerp(p1, 0.5);
+          c.y += 2.4;
+          scene.add(m);
+          pulses.push({ m, p0, p1, c, t: 0 });
+        }
+        const tmpV = new THREE.Vector3();
+        function updatePulses(dt) {
+          for (let i = pulses.length - 1; i >= 0; i--) {
+            const p = pulses[i];
+            p.t += dt / 0.9;
+            const t = Math.min(p.t, 1),
+              u = 1 - t;
+            tmpV
+              .set(0, 0, 0)
+              .addScaledVector(p.p0, u * u)
+              .addScaledVector(p.c, 2 * u * t)
+              .addScaledVector(p.p1, t * t);
+            p.m.position.copy(tmpV);
+            if (p.t >= 1) {
+              scene.remove(p.m);
+              p.m.material.dispose();
+              pulses.splice(i, 1);
+              routerFlash = 0.3;
+            }
+          }
+        }
+
+        /* ---------------- HTML labels ---------------- */
+        const labelsEl = $("#labels");
+        agents.forEach((a) => {
+          const t = document.createElement("button");
+          t.className = "tag";
+          t.type = "button";
+          t.setAttribute("aria-label", "Open " + a.cfg.name);
+          t.innerHTML =
+            '<span class="d"></span><span class="nm"></span><span class="sub"></span><span class="bub"></span>';
+          t.querySelector(".nm").textContent = a.cfg.name;
+          t.addEventListener("click", () => select(a.cfg.id));
+          labelsEl.appendChild(t);
+          a.tag = t;
+          updateTag(a);
+        });
+        const routerTag = document.createElement("div");
+        routerTag.className = "tag router";
+        routerTag.innerHTML =
+          '<span class="nm">Model router</span><span class="sub" id="routerCount">0 calls</span>';
+        labelsEl.appendChild(routerTag);
+
+        function updateTag(a) {
+          const s = STATUS[a.status];
+          a.tag.querySelector(".d").style.background = s.color;
+          a.tag.querySelector(".sub").textContent = a.walkLabel || s.label;
+          a.tag.querySelector(".bub").textContent =
+            a.status === "thinking"
+              ? "…"
+              : a.status === "error"
+                ? "!"
+                : a.status === "done"
+                  ? "✓"
+                  : "";
+          a.tag.querySelector(".bub").style.color = s.color;
+        }
+        const proj = new THREE.Vector3();
+        function placeTag(el, x, y, z) {
+          proj.set(x, y, z).project(camera);
+          if (proj.z > 1) {
+            el.style.visibility = "hidden";
+            return;
+          }
+          el.style.visibility = "visible";
+          const sx = ((proj.x + 1) / 2) * innerWidth,
+            sy = ((1 - proj.y) / 2) * innerHeight;
+          el.style.transform =
+            "translate(" +
+            (sx - el.offsetWidth / 2).toFixed(1) +
+            "px," +
+            (sy - el.offsetHeight).toFixed(1) +
+            "px)";
+        }
+
+        /* ---------------- UI panels ---------------- */
+        const listEl = $("#agentList"),
+          feedEl = $("#feed");
+        let selected = null;
+        const feedItems = [];
+        const fmtTime = (ts) =>
+          new Date(ts).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: false,
+          });
+
+        function buildRoster() {
+          agents.forEach((a) => {
+            const li = document.createElement("li");
+            const b = document.createElement("button");
+            b.className = "agent-btn";
+            b.type = "button";
+            const sw = document.createElement("span");
+            sw.className = "swatch";
+            sw.style.background = a.cfg.color;
+            const nm = document.createElement("span");
+            nm.className = "nm";
+            nm.textContent = a.cfg.name;
+            const rl = document.createElement("span");
+            rl.className = "rl";
+            rl.textContent = a.cfg.role;
+            nm.appendChild(rl);
+            const p = pill(a.status);
+            b.append(sw, nm, p);
+            b.addEventListener("click", () => select(a.cfg.id));
+            li.appendChild(b);
+            listEl.appendChild(li);
+            a.rosterBtn = b;
+            a.rosterPill = p;
+          });
+        }
+        function renderRoster() {
+          agents.forEach((a) => {
+            a.rosterBtn.setAttribute(
+              "aria-pressed",
+              String(selected === a.cfg.id),
+            );
+            a.rosterPill.querySelector("i").style.background =
+              STATUS[a.status].color;
+            a.rosterPill.lastChild.textContent = STATUS[a.status].label;
+          });
+        }
+        function pill(status) {
+          const p = document.createElement("span");
+          p.className = "pill";
+          const i = document.createElement("i");
+          i.style.background = STATUS[status].color;
+          p.append(i, document.createTextNode(STATUS[status].label));
+          return p;
+        }
+        function renderFeed() {
+          feedEl.textContent = "";
+          feedItems.slice(0, 6).forEach((f) => {
+            const li = document.createElement("li");
+            const b = document.createElement("b");
+            b.textContent = f.who + " ";
+            li.append(b, document.createTextNode(f.text));
+            feedEl.appendChild(li);
+          });
+        }
+        function pushFeed(who, text) {
+          feedItems.unshift({ who, text });
+          if (feedItems.length > 20) feedItems.pop();
+          renderFeed();
+        }
+
+        const drawer = $("#drawer");
+        function renderDrawer() {
+          if (!selected) {
+            drawer.hidden = true;
+            return;
+          }
+          const a = byId[selected];
+          drawer.hidden = false;
+          $("#dSwatch").style.background = a.cfg.color;
+          $("#dName").textContent = a.cfg.name;
+          $("#dRole").textContent = a.cfg.role;
+          const ds = $("#dStatus");
+          ds.replaceWith(Object.assign(pill(a.status), { id: "dStatus" }));
+          $("#dTask").textContent = a.task || "No task right now.";
+          const busy =
+            a.status === "thinking" ||
+            a.status === "working" ||
+            mock.busy.has(a.cfg.id);
+          $("#assignBtn").disabled = busy;
+          $("#assignHint").textContent = busy
+            ? a.cfg.name +
+              " is busy or has a task on the way. Try again once it is idle."
+            : "";
+          const log = $("#dLog");
+          log.textContent = "";
+          if (!a.log.length) {
+            const li = document.createElement("li");
+            li.textContent = "Nothing yet. Assign a task to get started.";
+            li.style.display = "block";
+            log.appendChild(li);
+          }
+          a.log.slice(0, 40).forEach((e) => {
+            const li = document.createElement("li");
+            const t = document.createElement("time");
+            t.textContent = fmtTime(e.ts);
+            const s = document.createElement("span");
+            s.textContent = e.text;
+            li.append(t, s);
+            log.appendChild(li);
+          });
+        }
+        function select(id) {
+          selected = id;
+          const a = byId[id];
+          ctl.goal.set(a.home.x, 0.6, a.home.z + 0.4);
+          agents.forEach((x) => x.tag.classList.toggle("sel", x.cfg.id === id));
+          renderRoster();
+          renderDrawer();
+        }
+        function deselect() {
+          selected = null;
+          selRing.visible = false;
+          agents.forEach((x) => x.tag.classList.remove("sel"));
+          renderRoster();
+          renderDrawer();
+        }
+        $("#dClose").addEventListener("click", deselect);
+        addEventListener("keydown", (e) => {
+          if (e.key === "Escape" && selected) deselect();
+        });
+        $("#assignForm").addEventListener("submit", (e) => {
+          e.preventDefault();
+          const input = $("#taskInput"),
+            text = input.value.trim();
+          if (!selected) return;
+          if (!text) {
+            $("#assignHint").textContent = "Type a task first.";
+            input.focus();
+            return;
+          }
+          source.assignTask(selected, text);
+          input.value = "";
+        });
+
+        /* ---------------- office: the single entry point for events ---------------- */
+        function addLog(a, text, ts) {
+          a.log.unshift({ ts, text });
+          if (a.log.length > 80) a.log.pop();
+        }
+        const office = {
+          ingest(ev) {
+            const ts = ev.ts || Date.now();
+            if (ev.type === "agent.status") {
+              const a = byId[ev.agentId];
+              if (!a || !STATUS[ev.status]) return;
+              a.status = ev.status;
+              a.statusSince = clock.elapsedTime;
+              if (ev.task !== undefined) a.task = ev.task;
+              if (ev.status === "idle") {
+                a.task = null;
+                a.deskParts.inbox.visible = false;
+              }
+              const col = STATUS[ev.status].color;
+              a.antM.color.set(col);
+              a.antM.emissive.set(col);
+              a.deskParts.logoMat.color.set(col);
+              a.deskParts.logoMat.emissive.set(col);
+              addLog(a, "Status: " + STATUS[ev.status].label, ts);
+              if (ev.status !== "idle")
+                pushFeed(
+                  a.cfg.name,
+                  STATUS[ev.status].label.toLowerCase() +
+                    (a.task ? ": " + a.task : ""),
+                );
+              updateTag(a);
+              renderRoster();
+            } else if (ev.type === "agent.log") {
+              const a = byId[ev.agentId];
+              if (!a) return;
+              addLog(a, ev.message, ts);
+            } else if (ev.type === "agent.handoff") {
+              const from = byId[ev.from],
+                to = byId[ev.to];
+              if (!from || !to) return;
+              addLog(
+                from,
+                "Handing off to " + to.cfg.name + ": " + ev.task,
+                ts,
+              );
+              addLog(to, "Incoming from " + from.cfg.name + ": " + ev.task, ts);
+              pushFeed(from.cfg.name, "handed off to " + to.cfg.name);
+              startHandoff(from, to);
+            } else if (ev.type === "model.call") {
+              const a = byId[ev.agentId];
+              if (!a) return;
+              routerCalls++;
+              $("#routerCount").textContent = routerCalls + " calls";
+              addLog(
+                a,
+                "Model call" + (ev.tier ? " via " + ev.tier + " tier" : ""),
+                ts,
+              );
+              pulse(a);
+            }
+            if (
+              selected &&
+              (ev.agentId === selected ||
+                ev.from === selected ||
+                ev.to === selected)
+            )
+              renderDrawer();
+          },
+          walkTime(fromId, toId) {
+            return walkTime(byId[fromId].idx, byId[toId].idx);
+          },
+        };
+        window.office = office;
+
+        /* ---------------- mock source (replace with real agent layer later) ---------------- */
+        const rand = (a, b) => a + Math.random() * (b - a);
+        const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+        const STEPS = [
+          "Reading context",
+          "Calling tools",
+          "Checking results",
+          "Writing output",
+          "Double checking edge cases",
+        ];
+        const mock = {
+          running: true,
+          busy: new Set(),
+          emit(ev) {
+            office.ingest(Object.assign({ ts: Date.now() }, ev));
+          },
+          later(fn, ms) {
+            setTimeout(fn, ms);
+          },
+          call(id) {
+            this.emit({
+              type: "model.call",
+              agentId: id,
+              tier: pick(["subscription", "cheap", "free", "free"]),
+            });
+          },
+          runTask(id, task) {
+            this.busy.add(id);
+            this.emit({
+              type: "agent.status",
+              agentId: id,
+              status: "thinking",
+              task,
+            });
+            this.emit({
+              type: "agent.log",
+              agentId: id,
+              message: "Picked up: " + task,
+            });
+            this.call(id);
+            this.later(
+              () => {
+                if (Math.random() < 0.1) {
+                  this.emit({
+                    type: "agent.status",
+                    agentId: id,
+                    status: "error",
+                  });
+                  this.emit({
+                    type: "agent.log",
+                    agentId: id,
+                    message: "Model timed out. Will retry later.",
+                  });
+                  this.later(() => {
+                    this.emit({
+                      type: "agent.status",
+                      agentId: id,
+                      status: "idle",
+                    });
+                    this.busy.delete(id);
+                  }, 4500);
+                  return;
+                }
+                this.emit({
+                  type: "agent.status",
+                  agentId: id,
+                  status: "working",
+                });
+                const steps = 2 + Math.floor(Math.random() * 3);
+                let t = 0;
+                for (let k = 0; k < steps; k++) {
+                  t += rand(1500, 2600);
+                  this.later(() => {
+                    this.emit({
+                      type: "agent.log",
+                      agentId: id,
+                      message: pick(STEPS),
+                    });
+                    this.call(id);
+                  }, t);
+                }
+                this.later(() => this.finish(id, task), t + rand(1200, 2000));
+              },
+              rand(1800, 3200),
+            );
+          },
+          finish(id, task) {
+            this.emit({ type: "agent.status", agentId: id, status: "done" });
+            this.emit({
+              type: "agent.log",
+              agentId: id,
+              message: "Finished: " + task,
+            });
+            const idle = agents.filter(
+              (a) =>
+                a.cfg.id !== id &&
+                !this.busy.has(a.cfg.id) &&
+                a.mode === "seated",
+            );
+            if (this.running && idle.length && Math.random() < 0.4) {
+              const to = pick(idle).cfg.id;
+              const next = "Review: " + task;
+              this.busy.add(to);
+              this.later(() => {
+                this.emit({ type: "agent.handoff", from: id, to, task: next });
+                const w = office.walkTime(id, to) * 1000;
+                this.later(() => this.runTask(to, next), w + 1300);
+                this.later(
+                  () => {
+                    this.emit({
+                      type: "agent.status",
+                      agentId: id,
+                      status: "idle",
+                    });
+                    this.busy.delete(id);
+                  },
+                  w * 2 + 1600,
+                );
+              }, 900);
+            } else {
+              this.later(() => {
+                this.emit({
+                  type: "agent.status",
+                  agentId: id,
+                  status: "idle",
+                });
+                this.busy.delete(id);
+              }, 1800);
+            }
+          },
+          tick() {
+            if (this.running) {
+              const idle = agents.filter(
+                (a) => !this.busy.has(a.cfg.id) && a.mode === "seated",
+              );
+              if (idle.length && Math.random() < 0.7) {
+                const a = pick(idle);
+                this.runTask(a.cfg.id, pick(a.cfg.tasks));
+              }
+            }
+            setTimeout(() => this.tick(), rand(2400, 4200));
+          },
+        };
+        const source = {
+          assignTask(id, text) {
+            mock.runTask(id, text);
+          },
+          // Later: POST the task to the agent backend, and feed its WebSocket events into office.ingest.
+          // const ws = new WebSocket("wss://your-backend/events");
+          // ws.onmessage = e => office.ingest(JSON.parse(e.data));
+        };
+        $("#toggleSim").addEventListener("click", (e) => {
+          mock.running = !mock.running;
+          e.currentTarget.textContent = mock.running
+            ? "Pause auto activity"
+            : "Resume auto activity";
+          e.currentTarget.setAttribute("aria-pressed", String(mock.running));
+        });
+
+        /* ---------------- camera controls ---------------- */
+        const DEFAULT_VIEW = {
+          theta: 0.78,
+          phi: 0.98,
+          r: innerWidth < 760 ? 28 : 21,
+        };
+        const ctl = Object.assign({}, DEFAULT_VIEW, {
+          target: new THREE.Vector3(0, 0.6, 0),
+          goal: new THREE.Vector3(0, 0.6, 0),
+        });
+        const clampV = (v, a, b) => Math.max(a, Math.min(b, v));
+        function updateCamera(dt) {
+          ctl.target.lerp(ctl.goal, 1 - Math.exp(-5 * dt));
+          const sp = Math.sin(ctl.phi);
+          camera.position.set(
+            ctl.target.x + ctl.r * sp * Math.sin(ctl.theta),
+            ctl.target.y + ctl.r * Math.cos(ctl.phi),
+            ctl.target.z + ctl.r * sp * Math.cos(ctl.theta),
+          );
+          camera.lookAt(ctl.target);
+        }
+        $("#resetView").addEventListener("click", () => {
+          Object.assign(ctl, DEFAULT_VIEW);
+          ctl.goal.set(0, 0.6, 0);
+        });
+
+        const pointers = new Map();
+        let drag = null,
+          pinch = 0;
+        const pdist = () => {
+          const p = [...pointers.values()];
+          return Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y);
+        };
+        canvas.addEventListener("pointerdown", (e) => {
+          canvas.setPointerCapture(e.pointerId);
+          pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+          if (pointers.size === 1) drag = { moved: 0 };
+          if (pointers.size === 2) {
+            drag = null;
+            pinch = pdist();
+          }
+        });
+        canvas.addEventListener("pointermove", (e) => {
+          const prev = pointers.get(e.pointerId);
+          if (!prev) return;
+          const dx = e.clientX - prev.x,
+            dy = e.clientY - prev.y;
+          pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+          if (pointers.size === 1 && drag) {
+            ctl.theta = clampV(ctl.theta - dx * 0.006, 0.05, 1.5);
+            ctl.phi = clampV(ctl.phi - dy * 0.006, 0.45, 1.25);
+            drag.moved += Math.abs(dx) + Math.abs(dy);
+          } else if (pointers.size === 2) {
+            const d = pdist();
+            if (d > 0) {
+              ctl.r = clampV((ctl.r * pinch) / d, 10, 34);
+              pinch = d;
+            }
+          }
+        });
+        const raycaster = new THREE.Raycaster(),
+          ndc = new THREE.Vector2();
+        function endPointer(e) {
+          if (drag && drag.moved < 6 && pointers.size === 1) {
+            const r = canvas.getBoundingClientRect();
+            ndc.set(
+              ((e.clientX - r.left) / r.width) * 2 - 1,
+              -((e.clientY - r.top) / r.height) * 2 + 1,
+            );
+            raycaster.setFromCamera(ndc, camera);
+            const hit = raycaster.intersectObjects(agentMeshes, false)[0];
+            if (hit) select(hit.object.userData.agentId);
+          }
+          pointers.delete(e.pointerId);
+          if (!pointers.size) drag = null;
+        }
+        canvas.addEventListener("pointerup", endPointer);
+        canvas.addEventListener("pointercancel", (e) => {
+          pointers.delete(e.pointerId);
+          drag = null;
+        });
+        canvas.addEventListener(
+          "wheel",
+          (e) => {
+            e.preventDefault();
+            ctl.r = clampV(ctl.r * (1 + e.deltaY * 0.001), 10, 34);
+          },
+          { passive: false },
+        );
+
+        addEventListener("resize", () => {
+          renderer.setSize(innerWidth, innerHeight);
+          camera.aspect = innerWidth / innerHeight;
+          camera.updateProjectionMatrix();
+        });
+
+        /* ---------------- animation ---------------- */
+        const clock = new THREE.Clock();
+        const ease = (cur, target, k) => cur + (target - cur) * k;
+        function easeAngle(cur, target, k) {
+          let d = ((target - cur + Math.PI) % (Math.PI * 2)) - Math.PI;
+          if (d < -Math.PI) d += Math.PI * 2;
+          return cur + d * k;
+        }
+        function animateAgent(a, t, dt) {
+          const k = 1 - Math.exp(-10 * dt);
+          const pos = a.group.position;
+          if (a.mode === "walking" && a.path.length) {
+            const p = a.path[0];
+            const vx = p.x - pos.x,
+              vz = p.z - pos.z,
+              d = Math.hypot(vx, vz),
+              step = WALK_SPEED * dt;
+            if (d <= step) {
+              pos.x = p.x;
+              pos.z = p.z;
+              a.path.shift();
+              if (!a.path.length) {
+                a.mode = "standing";
+                const cb = a.onArrive;
+                a.onArrive = null;
+                if (cb) cb();
+              }
+            } else {
+              pos.x += (vx / d) * step;
+              pos.z += (vz / d) * step;
+              a.heading = Math.atan2(vx, vz);
+            }
+            a.walkPhase += dt * 9;
+          }
+          a.group.rotation.y = easeAngle(a.group.rotation.y, a.heading, k);
+          a.doc.visible = a.carry;
+
+          const walking = a.mode === "walking";
+          const seated = a.mode === "seated";
+          const since = t - a.statusSince;
+          const m = MOTION;
+
+          // legs
+          const legSwing = walking ? Math.sin(a.walkPhase) * 0.6 * m : 0;
+          a.legL.rotation.x = ease(
+            a.legL.rotation.x,
+            seated ? -Math.PI / 2 : legSwing,
+            k,
+          );
+          a.legR.rotation.x = ease(
+            a.legR.rotation.x,
+            seated ? -Math.PI / 2 : -legSwing,
+            k,
+          );
+          pos.y = walking ? Math.abs(Math.sin(a.walkPhase)) * 0.04 * m : 0;
+
+          // arms
+          let aL = Math.sin(t * 1.4 + a.phase) * 0.04 * m,
+            aR = aL;
+          if (a.carry) {
+            aL = aR = -1.1;
+          } else if (walking) {
+            aL = -legSwing * 0.7;
+            aR = legSwing * 0.7;
+          } else if (a.status === "done" && since < 1.4) {
+            aL = aR = -2.7;
+          } else if (a.status === "working" && seated) {
+            aL = -1.15 + Math.sin(t * 18 * m) * 0.12 * m;
+            aR = -1.15 + Math.sin(t * 18 * m + 1.7) * 0.12 * m;
+          } else if (a.status === "thinking") {
+            aR = -1.9;
+          }
+          a.armL.rotation.x = ease(a.armL.rotation.x, aL, k);
+          a.armR.rotation.x = ease(a.armR.rotation.x, aR, k);
+
+          // head
+          let hx = 0,
+            hy = 0,
+            hz = 0;
+          if (a.status === "thinking") {
+            hz = Math.sin(t * 1.6) * 0.15 * m;
+            hx = -0.12;
+          } else if (a.status === "working") {
+            hx = 0.2 + Math.sin(t * 4) * 0.03 * m;
+          } else if (a.status === "error") {
+            if (since < 1.2) hy = Math.sin(t * 30) * 0.14 * m;
+            hx = 0.28;
+          } else if (!walking) {
+            hy = Math.sin(t * 0.5 + a.phase) * 0.35 * m;
+          }
+          a.head.rotation.x = ease(a.head.rotation.x, hx, k);
+          a.head.rotation.y = ease(a.head.rotation.y, hy, k);
+          a.head.rotation.z = ease(a.head.rotation.z, hz, k);
+
+          // eyes blink, antenna glow
+          a.eyes.scale.y = (t * 0.25 + a.phase) % 1 < 0.03 ? 0.15 : 1;
+          a.antM.emissiveIntensity =
+            a.status === "error"
+              ? Math.sin(t * 10) > 0
+                ? 1.5
+                : 0.2
+              : a.status === "thinking"
+                ? 0.6 + 0.4 * Math.sin(t * 6)
+                : 0.9;
+        }
+
+        function frame() {
+          const dt = Math.min(clock.getDelta(), 0.1),
+            t = clock.elapsedTime;
+          agents.forEach((a) => animateAgent(a, t, dt));
+          updatePulses(dt);
+          routerFlash = Math.max(0, routerFlash - dt);
+          leds.forEach((l) => {
+            l.m.emissiveIntensity =
+              routerFlash > 0
+                ? 1.4
+                : 0.25 + 0.35 * (Math.sin(t * l.speed + l.phase) > 0.6 ? 1 : 0);
+          });
+          if (selected) {
+            const a = byId[selected];
+            selRing.visible = true;
+            selRing.position.x = a.group.position.x;
+            selRing.position.z = a.group.position.z;
+          }
+          updateCamera(dt);
+          renderer.render(scene, camera);
+          agents.forEach((a) =>
+            placeTag(
+              a.tag,
+              a.group.position.x,
+              a.group.position.y + 2.0,
+              a.group.position.z,
+            ),
+          );
+          placeTag(routerTag, ROUTER_POS.x, ROUTER_POS.y + 1.45, ROUTER_POS.z);
+          requestAnimationFrame(frame);
+        }
+
+        buildRoster();
+        renderRoster();
+        renderFeed();
+        frame();
+        // warm start: a few agents begin working
+        ["atlas", "lyra", "sentry"].forEach((id, i) =>
+          setTimeout(
+            () => mock.runTask(id, pick(byId[id].cfg.tasks)),
+            600 + i * 900,
+          ),
+        );
+        setTimeout(() => mock.tick(), 3000);
+      })();
+    </script>
+  </body>
+</html>

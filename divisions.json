@@ -1,0 +1,7 @@
+[
+  { "id": "product",     "name": "Product Suite",   "level": 1, "theme": "executive" },
+  { "id": "docs",        "name": "Docs Library",    "level": 0, "theme": "library" },
+  { "id": "rnd",         "name": "R&D Lab",         "level": 0, "theme": "lab" },
+  { "id": "meeting",     "name": "Meeting Room",    "level": 0, "theme": "meeting", "shared": true },
+  { "id": "developers",  "name": "Developers Hall", "level": 0, "theme": "developers" }
+]

@@ -1,0 +1,20 @@
+[
+  { "id": "pm",       "name": "Nika",   "position": "Product Manager",  "role": "Product management",       "color": "#5B6CFF", "division": "product",   "desk": "executive",
+    "look": { "kind": "ghost",  "skin": "#E6ECFF", "hair": "none",   "outfit": "suit",    "outfitColor": "#26324F", "accessory": "tophat",       "extras": ["monocle", "bowtie"] },
+    "tasks": ["Review the product roadmap", "Prioritize the backlog", "Write the spec for the next release"] },
+  { "id": "rnd",      "name": "Nova",   "position": "R&D",              "role": "Research and development", "color": "#9C6ADE", "division": "rnd",       "desk": "lab",
+    "look": { "kind": "zombie", "skin": "#8FC48A", "hair": "messy",  "hairColor": "#6A4CFF", "outfit": "labcoat", "outfitColor": "#F2F5F8", "pants": "#3B3F5C", "accessory": "goggles", "extras": ["stitches"] },
+    "tasks": ["Prototype a new scan engine", "Evaluate model options for triage", "Benchmark detection accuracy"] },
+  { "id": "writer",   "name": "Lyra",   "position": "Technical Writer", "role": "Docs and guides",          "color": "#EE8636", "division": "docs",      "desk": "writer",
+    "look": { "kind": "ghost",  "skin": "#F4E8FF", "hair": "bun",    "hairColor": "#8A4B3A", "outfit": "scarf",   "outfitColor": "#C8553D", "accessory": "roundglasses", "extras": [] },
+    "tasks": ["Update the user guide", "Write release notes", "Sync PRD changes"] },
+  { "id": "backend",  "name": "Atlas",  "position": "Backend",          "role": "Backend engineer",         "color": "#21A99A", "division": "developers", "desk": "backend",
+    "look": { "kind": "zombie", "skin": "#7FA86A", "hair": "patchy", "hairColor": "#2B2B33", "outfit": "hoodie",  "outfitColor": "#21A99A", "pants": "#2F3547", "accessory": "headphones", "extras": ["bone"] },
+    "tasks": ["Review API auth handling", "Optimize the scan queue", "Fix the report export endpoint"] },
+  { "id": "frontend", "name": "Pixel",  "position": "Frontend",         "role": "Frontend engineer",        "color": "#E0638A", "division": "developers", "desk": "frontend",
+    "look": { "kind": "ghost",  "skin": "#FFE8F3", "hair": "long",   "hairColor": "#E0638A", "outfit": "hoodie",  "outfitColor": "#E0638A", "accessory": "beanie", "extras": [] },
+    "tasks": ["Review dashboard spacing", "Check dark mode contrast", "Build findings table filters"] },
+  { "id": "qa",       "name": "Sentry", "position": "QA",               "role": "Quality assurance",        "color": "#4C9A3F", "division": "developers", "desk": "qa",
+    "look": { "kind": "zombie", "skin": "#9BC47A", "hair": "spiky",  "hairColor": "#1F1F24", "outfit": "vest",    "outfitColor": "#F28C28", "pants": "#3A3F4D", "accessory": "cap", "extras": ["bandage"] },
+    "tasks": ["Run regression on the scan module", "Verify the login flow", "Check report export filters"] }
+]
