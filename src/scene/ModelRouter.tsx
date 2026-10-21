@@ -25,13 +25,13 @@ export function ModelRouter({ layout }: { layout: Layout }) {
 
   return (
     <group>
-      <Box size={[1.0, 2.1, .7]} pos={[x, y, z]} color="#2B3142" />
+      <Box size={[1.0, 2.1, .7]} pos={[x, y, z]} color="#3A2A1E" />
       {leds.map((_, i) => {
         const r = Math.floor(i / COLS), c = i % COLS;
         return (
           <mesh key={i} position={[x - .26 + c * .26, y - .75 + r * .22, z + .36]} castShadow>
             <boxGeometry args={[.16, .05, .02]} />
-            <meshStandardMaterial ref={(m: MeshStandardMaterial | null) => { mats.current[i] = m; }} color="#5CE0A0" emissive="#3FD18C" emissiveIntensity={.3} roughness={.8} />
+            <meshStandardMaterial ref={(m: MeshStandardMaterial | null) => { mats.current[i] = m; }} color="#FFD28A" emissive="#FFB347" emissiveIntensity={.3} roughness={.8} />
           </mesh>
         );
       })}

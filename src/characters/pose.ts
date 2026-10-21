@@ -15,7 +15,7 @@ export interface Pose {
   thRX: number; thRZ: number; knRX: number; anRX: number;
   gripL: number; gripR: number; wiggle: number;
   tail1X: number; tail1Z: number; tail2X: number; tail2Z: number; tail3X: number; tail3Z: number;
-  prop: "none" | "cue" | "pad" | "cup";
+  prop: "none" | "cue" | "pad" | "cup" | "wand";
   // face
   lid: number;            // 0 open, 1 closed, below 0 is wide open
   look: "camera" | "point";
@@ -39,7 +39,7 @@ export const makePose = (): Pose => ({
 
 export interface PoseCtx {
   kind: CharacterKind; status: AgentStatus; pose: MotionPose; activity: ActivityKind | null;
-  t: number; walkPhase: number; since: number; carry: boolean; seed: number; motionScale: number;
+  t: number; walkPhase: number; since: number; carry: boolean; casting: boolean; seed: number; motionScale: number;
   /** True while this character is the one talking in a meeting. */
   speaking: boolean;
 }
@@ -68,7 +68,7 @@ export function computePose(c: PoseCtx, P: Pose): Pose {
   P.tail1Z = Math.sin(t * 1.4 + c.seed) * 0.12 * m; P.tail2Z = Math.sin(t * 1.4 + c.seed - 0.8) * 0.18 * m; P.tail3Z = Math.sin(t * 1.4 + c.seed - 1.6) * 0.26 * m;
 
   // ---- walking ----
-  if (walking || c.pose === "lifting") {
+  if (walking) {
     if (walking) {
       const s = Math.sin(ph), co = Math.cos(ph);
       P.hipsY = (z ? 0.92 - Math.abs(s) * 0.035 : 1.0 + Math.sin(ph * 0.5) * 0.035) * 1;
@@ -123,6 +123,15 @@ export function computePose(c: PoseCtx, P: Pose): Pose {
         P.headY = Math.sin(t * 0.5 + c.seed) * 0.35 * m; P.headX = 0.02;
         P.shLX = -0.5; P.shRX = -0.5; P.elLX = -1.0; P.elRX = -1.0; P.gripL = P.gripR = 0.3;
     }
+  }
+
+  // ---- casting a summoning spell: the wand arm rises and flicks, the other hand steadies the body ----
+  if (seated && c.casting) {
+    const flick = Math.sin(t * 9) * 0.22 * m;
+    P.spineX = 0.0; P.chestX = -0.05; P.headX = -0.12; P.headY = 0;
+    P.shRX = -2.3 + flick; P.shRZ = -0.25; P.elRX = -0.45 - flick * 0.8; P.wrRX = 0.2 + flick; P.gripR = 0.85; P.prop = "wand";
+    P.shLX = -0.9; P.elLX = -1.1; P.gripL = 0.4;
+    P.look = "point"; P.lookX = 0.1; P.lookY = 0.45; P.lid = 0.15; P.browAngry = 0.25; P.mouthCurve = 0.25; P.mouthW = 0.8;
   }
 
   // ---- lounge activities ----

@@ -14,7 +14,7 @@ const INSTANT = LOUNGE_MODE === "instant";
 const OFF = LOUNGE_MODE === "off";
 
 /* What characters do when they are not at a desk.
-   When idle for a while, a character gets up, rides the lift to the game lounge and picks something to do; when work arrives it hurries back.
+   When idle for a while, a character gets up, climbs the tower stairs to the common room and picks something to do; when work arrives it hurries back.
    When a meeting is called (top bar), everybody walks to their seat at the meeting table, and goes home when it ends.
    Nothing here touches the event contract: it only reads each agent's status. */
 export function LoungeBehavior({ layout, motions }: { layout: Layout; motions: RobotMotion[] }) {

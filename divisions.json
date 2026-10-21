@@ -1,7 +1,7 @@
 [
-  { "id": "product",     "name": "Product Suite",   "level": 1, "theme": "executive" },
-  { "id": "docs",        "name": "Docs Library",    "level": 0, "theme": "library" },
-  { "id": "rnd",         "name": "R&D Lab",         "level": 0, "theme": "lab" },
-  { "id": "meeting",     "name": "Meeting Room",    "level": 0, "theme": "meeting", "shared": true },
-  { "id": "developers",  "name": "Developers Hall", "level": 0, "theme": "developers" }
+  { "id": "product",     "name": "Headmaster's Tower",   "level": 1, "theme": "executive" },
+  { "id": "docs",        "name": "The Library",    "level": 0, "theme": "library" },
+  { "id": "rnd",         "name": "Potions Dungeon",         "level": 0, "theme": "lab" },
+  { "id": "meeting",     "name": "Great Hall",    "level": 0, "theme": "meeting", "shared": true },
+  { "id": "developers",  "name": "Charms Classroom", "level": 0, "theme": "developers" }
 ]

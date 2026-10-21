@@ -32,7 +32,7 @@ export function CameraRig({ layout }: { layout: Layout }) {
   const selected = useOfficeStore(s => s.selected);
   const resetSeq = useOfficeStore(s => s.resetSeq);
 
-  const homeDist = size.width < 760 ? 120 : 64;
+  const homeDist = size.width < 760 ? 140 : 80;
 
   const homeView = () => {
     const c = controls.current;

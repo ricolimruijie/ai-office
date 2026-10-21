@@ -1,8 +1,7 @@
-import { isLiftStep, type ActivityKind, type RouteStep } from "../../shared/layout";
-import { requestLift } from "../scene/lift";
+import type { ActivityKind, RouteStep } from "../../shared/layout";
 
 /* Mutable per-character motion state, driven by walkers and read by the animation each frame. */
-export type Pose = "seated" | "walking" | "standing" | "lifting" | "activity";
+export type Pose = "seated" | "walking" | "standing" | "activity";
 
 export interface RobotMotion {
   pose: Pose;
@@ -11,6 +10,8 @@ export interface RobotMotion {
   z: number;
   heading: number;
   carry: boolean;
+  /** True while the character is casting a spell with a wand (summoning a familiar). */
+  casting: boolean;
   walkPhase: number;
   path: RouteStep[];
   onArrive: (() => void) | null;
@@ -21,10 +22,10 @@ export interface RobotMotion {
 }
 
 export const createMotion = (x: number, z: number, y = 0): RobotMotion => ({
-  pose: "seated", x, y, z, heading: 0, carry: false, walkPhase: 0, path: [], onArrive: null, activity: null, speedMul: 1
+  pose: "seated", x, y, z, heading: 0, carry: false, casting: false, walkPhase: 0, path: [], onArrive: null, activity: null, speedMul: 1
 });
 
-/* Walk a character along its path. Lift steps hand the character over to the lift controller until it arrives upstairs or downstairs.
+/* Walk a character along its path. Points can carry a height, so a climb up the staircase is just more points.
    Returns true while the character is walking. */
 export function stepMotion(motion: RobotMotion, dt: number, speed: number): boolean {
   if (motion.pose !== "walking") return false;
@@ -33,12 +34,6 @@ export function stepMotion(motion: RobotMotion, dt: number, speed: number): bool
     motion.pose = "standing";
     const cb = motion.onArrive; motion.onArrive = null;
     if (cb) cb();
-    return false;
-  }
-  if (isLiftStep(p)) {
-    const rest = motion.path.slice(1), cb = motion.onArrive;
-    motion.path = []; motion.onArrive = null; motion.pose = "lifting";
-    requestLift(motion, p.toY, rest, cb);
     return false;
   }
   const vx = p.x - motion.x, vz = p.z - motion.z, vy = (p.y ?? 0) - motion.y, d = Math.hypot(vx, vz, vy), step = speed * dt;

@@ -6,7 +6,7 @@ Agent Office is split into three layers that only talk through one contract.
  event source  ──►  ingest(event)  ──►  Zustand store  ──►  React UI + 3D scene
  (WebSocket)        (single door)       (domain state)
                          │
-                         └──► scene effects (handoff walk, light pulse)
+                         └──► scene effects (handoff familiar, light pulse)
 ```
 
 ## The event contract
@@ -17,7 +17,7 @@ Agent Office is split into three layers that only talk through one contract.
 | --- | --- |
 | `agent.status` | Sets an agent's status and optionally its task. `idle` clears the task and inbox. |
 | `agent.log` | Adds a line to that agent's activity log. |
-| `agent.handoff` | The sender walks to the receiver's desk with a document. |
+| `agent.handoff` | The sender casts a spell and a familiar (an owl) flies the document to the receiver's desk. |
 | `model.call` | Increments the router counter and sends a light pulse to the rack. |
 
 Every event carries `ts` (ms). `isOfficeEvent()` validates incoming data at runtime.
@@ -45,25 +45,23 @@ Anything that changes every frame stays out of React state:
 
 - `RobotMotion` (`src/characters/motion.ts`): position (including height), pose, heading, walking path, and the lounge activity of each character.
 - `sceneState` (`src/scene/sceneState.ts`): router flash, tag anchors and elements, and every character's motion (so doors know who is near).
-- `liftState` (`src/scene/lift.ts`): the lift cab height and door openings.
 - The clock (`src/state/clockStore.ts`) is read inside `useFrame`, so the sky and lamps change without re-rendering.
 
 Characters read the store with `getState()` inside `useFrame`, so a status change never re-renders a 3D component.
 
-## Layout, floors, routes and handoff timing
+## Layout, routes and delivery timing
 
-`shared/layout.ts` is pure geometry used by both sides (the 3D scene and the mock server). It turns `agents.json` and `divisions.json` into a floor plan:
+`shared/layout.ts` is pure geometry used by both sides (the 3D scene and the mock server). It turns `agents.json` and `divisions.json` into a castle:
 
-- **Ground floor:** one glass-walled room per `level: 0` division (including `shared` ones like the meeting room), side by side in the order of `divisions.json`, each with a sliding door onto the front corridor. A lift lobby sits at the right end.
-- **Meeting room:** sized so one table seats every agent. `layout.meeting` holds the table and one seat per agent, each an `ActivitySpot` with its own approach path.
-- **Upper floor:** a block behind the ground floor (`UPPER_Y` high) with the product suite and the game lounge.
-- **Lift:** a glass shaft joining the two floors. Its ground doors face the lobby and its upper doors face the lounge.
-- **Routes:** `routeTo(i, j)` is the walking path between two desks. A route is a list of steps: points (which can carry a height) and `{ lift: true, toY }` steps. `routeHome` is the way back. `routeToSpot`, `routeFromSpot` and `routeSpotToSpot` do the same for any activity spot (lounge or meeting seat), across floors if needed.
-- `walkTime` estimates a trip's duration, adding `LIFT_TRIP_S` per lift step.
+- **Two rows of buildings.** The front row (Charms Classroom, Great Hall, Potions Tower) faces the forecourt lane (`COURT_Z`). The back row (Library, Common Room, Headmaster's Tower) faces the alley lane (`ALLEY_Z`) behind them. The `theme` of a division picks its row and its order. The common room always exists and stands straight behind the Great Hall.
+- **Passages.** Gaps between the front-row buildings (`layout.passages`) join the forecourt to the alley. Everyone walks along those two lanes and the passages.
+- **Rooms.** `layout.rooms` lists every building as a `RoomRect` with its doorway (`doorX`), the walking lane just inside (`laneZ`) and the lane just outside (`outZ`). All desks face +z, so every building opens to the south.
+- **The Headmaster's Tower.** The only upper-floor room (`level: 1`, `UPPER_Y` high). Its spiral staircase (`layout.stairs`) is a list of points that climb, so walking up is just a path with rising heights.
+- **Great Hall.** Sized so one table seats every agent. `layout.meeting` holds the table and one seat per agent, each an `ActivitySpot`.
+- **Routes.** `routeToSpot`, `routeFromSpot` and `routeSpotToSpot` build a path from the chair out of the room (down the stairs for a tower), along the lanes (through the nearest passage when the rows differ), and into the spot's room. Each spot's `via` list starts just inside its doorway.
+- `deliveryTime()` estimates how long a familiar delivery takes: the summoning spell, the flight (`familiarFlight`, a straight arc at `FAMILIAR_SPEED`) and the landing.
 
-The mock server calls `walkTime()` to decide when the receiver starts working, so the frontend never has to report arrival. The hand-over pause (1.2 s) is a constant in `Handoffs.tsx`, mirrored in `server/mock.ts`.
-
-**The lift** (`src/scene/lift.ts`): when a character reaches a lift step, `stepMotion` hands it to the lift controller, which puts it in a line near the doors (`queueSpot`). The controller runs one trip at a time: close the doors and bring the cab to the floor of the first person waiting, open the door, and let everyone queued for that floor walk into their own slot inside the cab (up to `CAPACITY`). It holds the doors while people are still stepping in or running up to the line, then closes, rides, opens on the other side, and lets the riders out one by one. People waiting on the arrival floor can board right away, because the cab is already there with its door open. `LiftView.tsx` only draws what `liftState` says.
+The mock server calls `deliveryTime()` to decide when the receiver starts working, so the frontend never has to report arrival. The cast and landing pauses are the constants `SUMMON_S` and `DELIVER_S` in `shared/layout.ts`.
 
 **Behavior away from the desk** (`src/characters/LoungeBehavior.tsx`): a throttled loop that watches each agent's status and the `meeting` flag. After an idle spell it sends the character to a free lounge spot, switches spots now and then, and sends it home when its status leaves idle. When a meeting is called every character goes to its seat (from the desk or from the lounge) and goes home when it ends. It never touches the event contract.
 
@@ -75,16 +73,16 @@ The look is cel-shaded: every material is a `MeshToonMaterial` with a 3-step gra
 
 | Area | Files |
 | --- | --- |
-| Floors, exterior walls, partitions, ceiling beams | `Building.tsx` |
+| Floors, walls, arcaded fronts, turrets, ceiling beams | `Building.tsx`, `Arches.tsx` |
 | Walls that drop when seen from outside | `Cutaway.tsx` |
-| Glass partitions and sliding doors | `GlassWall.tsx`, `Doors.tsx` |
-| The glass lift (cab, doors, shaft) and its controller | `LiftView.tsx`, `lift.ts` |
-| Yard: asphalt, containers, chimney, silos, trees, skyline | `Environment.tsx` |
+| Oak gates that swing open | `Doors.tsx` |
+| The spiral staircase in the Headmaster's Tower | `StairTower.tsx` |
+| Grounds: lawns, lake and bridge, forest, hut, Quidditch pitch, mountains | `Environment.tsx` |
 | Sun, moon, sky dome, stars, clouds | `timeOfDay.ts`, `Sky.tsx`, `Lighting.tsx` |
 | Gaming workstations (six styles) and RGB lighting | `desk/Desk.tsx`, `desk/gear.tsx`, `desk/rgb.ts` |
-| Room furniture, corridor, lobby, product suite | `decor/Rooms.tsx`, `decor/props.tsx` |
-| Game lounge | `decor/Lounge.tsx` |
-| Meeting room table and chairs | `decor/Rooms.tsx` (`MeetingDecor`) |
+| Room furniture, forecourt fountain, headmaster's study | `decor/Rooms.tsx`, `decor/props.tsx`, `decor/magic.tsx` |
+| Common room | `decor/Lounge.tsx` |
+| Great Hall table and chairs | `decor/Rooms.tsx` (`GreatHallDecor`) |
 | Roofs for the outside view | `Roofs.tsx` |
 | Characters: skeleton, face, hands, hair, outfits | `characters/Character.tsx`, `CharacterParts.tsx` |
 | Poses and emotions per status and activity | `characters/pose.ts` |
@@ -139,8 +137,8 @@ Implement `OfficeSource` (`src/events/EventSource.ts`) and export it from `src/e
 | Change a character's desk | `agents.json` (`desk`), `desk/Desk.tsx` |
 | Change how a character moves or emotes | `characters/pose.ts` |
 | Add or change a lounge activity | `shared/layout.ts` (spots), `decor/Lounge.tsx`, `characters/pose.ts` |
-| Change the floor plan, doors or routes | `shared/layout.ts`, then `Building.tsx` |
-| Change the lift | `scene/lift.ts` (behavior), `LiftView.tsx` (look) |
+| Change the floor plan, doors or routes | `shared/layout.ts`, then `Building.tsx` and `Roofs.tsx` |
+| Change the staircase | `shared/layout.ts` (`climb`), `StairTower.tsx` (look) |
 | Change the meeting room or its seating | `shared/layout.ts` (`meeting`), `decor/Rooms.tsx` |
 | Change the sky, sun or lamps by time | `scene/timeOfDay.ts`, `Lighting.tsx` |
 | Add an event type | `shared/events.ts`, then `ingest.ts`, then `isOfficeEvent` |

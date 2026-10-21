@@ -17,13 +17,11 @@ export function Lighting({ layout }: { layout: Layout }) {
 
   const spots = useMemo(() => {
     const out: [number, number, number][] = [];
-    layout.rooms.forEach(r => { const cx = (r.minX + r.maxX) / 2, w = r.maxX - r.minX; out.push([cx - w * 0.22, 3.1, -3.4], [cx + w * 0.22, 3.1, -5.4]); });
-    out.push([0, 3.0, 1.9], [layout.lobby.minX + 3, 3.0, -2]);
-    if (layout.suite) out.push([(layout.suite.minX + layout.suite.maxX) / 2, layout.suite.y + 3.1, -14.5]);
-    if (layout.lounge) {
-      const l = layout.lounge, y = l.y + 3.2;
-      out.push([l.minX + 4, y, -15], [l.minX + 10, y, -16], [l.minX + 7, y, -11.5], [l.minX + 13, y, -12.5]);
-    }
+    layout.rooms.forEach(r => {
+      const cx = (r.minX + r.maxX) / 2, w = r.maxX - r.minX, y = r.y + 3.1, d = r.maxZ - r.minZ;
+      out.push([cx - w * 0.22, y, r.minZ + d * 0.35], [cx + w * 0.22, y, r.minZ + d * 0.65]);
+    });
+    layout.passages.forEach(x => out.push([x, 3.4, 0]));
     return out;
   }, [layout]);
 

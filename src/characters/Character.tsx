@@ -28,7 +28,7 @@ const JOINTS = [
   "body", "hips", "spine", "chest", "neck", "head", "skull",
   "shL", "shR", "elL", "elR", "wrL", "wrR", "thL", "thR", "knL", "knR", "anL", "anR", "t1", "t2", "t3",
   "eyeL", "eyeR", "pupL", "pupR", "lidL", "lidR", "browL", "browR", "smile", "mouthIn", "teeth", "cheekL", "cheekR",
-  "gem", "doc", "cue", "padL", "padR", "cup", "sweat", "boneBlob"
+  "gem", "doc", "cue", "wand", "padL", "padR", "cup", "sweat", "boneBlob"
 ] as const;
 type JointName = (typeof JOINTS)[number];
 
@@ -83,7 +83,7 @@ export function Character({ agent, motion }: Props) {
     const speaking = motion.pose === "activity" && motion.activity === "meeting" && Math.floor(t / 4.5) % order.length === order.indexOf(agent.id);
     computePose({
       kind: look.kind, status: a.status, pose: motion.pose, activity: motion.activity, t, walkPhase: motion.walkPhase, since,
-      carry: motion.carry, seed, motionScale: m, speaking
+      carry: motion.carry, casting: motion.casting, seed, motionScale: m, speaking
     }, P);
 
     // root: position, heading, a hop of joy when a task is done
@@ -113,6 +113,7 @@ export function Character({ agent, motion }: Props) {
     fingerL.grip += (P.gripL - fingerL.grip) * k; fingerR.grip += (P.gripR - fingerR.grip) * k;
     fingerL.wiggle = P.wiggle; fingerR.wiggle = P.wiggle;
     if (J.cue.current) J.cue.current.visible = P.prop === "cue";
+    if (J.wand.current) J.wand.current.visible = P.prop === "wand";
     if (J.padL.current) J.padL.current.visible = P.prop === "pad";
     if (J.padR.current) J.padR.current.visible = P.prop === "pad";
     if (J.cup.current) J.cup.current.visible = P.prop === "cup";
@@ -275,6 +276,12 @@ export function Character({ agent, motion }: Props) {
                         <group ref={J.cue} visible={false}>
                           <Cylr rt={0.009} rb={0.016} h={1.4} pos={[0, -0.25, 0.01]} color="#C9A27A" seg={8} />
                           <Cylr rt={0.01} h={0.04} pos={[0, -0.97, 0.01]} color="#3E6AA8" seg={8} outline={false} />
+                        </group>
+                      )}
+                      {s > 0 && (
+                        <group ref={J.wand} visible={false} rotation={[-1.2, 0, 0]}>
+                          <Cylr rt={0.007} rb={0.013} h={0.34} pos={[0, -0.1, 0.02]} color="#5A3B28" seg={8} />
+                          <Sph r={0.02} pos={[0, -0.28, 0.02]} color="#FFF3B0" outline={false} seg={8} emissive="#FFE680" emissiveIntensity={2} />
                         </group>
                       )}
                       {s > 0 && (

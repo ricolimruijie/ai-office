@@ -80,5 +80,54 @@ export const TEX = {
       g.fillStyle = "rgba(210,216,224,0.55)";
       g.save(); g.translate(x * 32 + 16, y * 32 + 16); g.rotate(((x + y) % 2 ? 1 : -1) * 0.7); g.fillRect(-9, -2.5, 18, 5); g.restore();
     }
+  }),
+  stone: make((g, s) => {   // castle ashlar: irregular blocks with dark mortar and moss
+    const r = rng(31), rows = 6, bh = s / rows;
+    g.fillStyle = "#4F4B49"; g.fillRect(0, 0, s, s);
+    for (let y = 0; y < rows; y++) {
+      let x = -(r() * 60);
+      while (x < s) {
+        const w = 70 + r() * 60, sh = 0.82 + r() * 0.3;
+        g.fillStyle = `rgb(${Math.round(150 * sh)},${Math.round(145 * sh)},${Math.round(140 * sh)})`;
+        g.fillRect(x + 2, y * bh + 2, w - 4, bh - 4);
+        x += w;
+      }
+    }
+    noise(g, s, 900, 32, 0.2); noise(g, s, 300, 33, 0.12, true);
+    g.fillStyle = "rgba(70,100,60,0.18)";
+    for (let i = 0; i < 18; i++) g.fillRect(r() * s, r() * s, 6 + r() * 14, 3 + r() * 5);
+  }),
+  flag: make((g, s) => {    // flagstone floor
+    const r = rng(41), n = 4, c = s / n;
+    g.fillStyle = "#3A3836"; g.fillRect(0, 0, s, s);
+    for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+      const sh = 0.8 + r() * 0.35;
+      g.fillStyle = `rgb(${Math.round(128 * sh)},${Math.round(124 * sh)},${Math.round(122 * sh)})`;
+      g.fillRect(x * c + 3, y * c + 3, c - 6, c - 6);
+    }
+    noise(g, s, 700, 42, 0.18);
+  }),
+  slate: make((g, s) => {   // roof slates in scales
+    const r = rng(51), rows = 8, rh = s / rows, cw = s / 6;
+    g.fillStyle = "#1F2430"; g.fillRect(0, 0, s, s);
+    for (let y = 0; y < rows; y++) for (let x = -1; x < 7; x++) {
+      const off = y % 2 ? cw / 2 : 0, sh = 0.8 + r() * 0.4;
+      g.fillStyle = `rgb(${Math.round(58 * sh)},${Math.round(68 * sh)},${Math.round(92 * sh)})`;
+      g.beginPath(); g.moveTo(x * cw + off + 2, y * rh); g.lineTo((x + 1) * cw + off - 2, y * rh);
+      g.lineTo((x + 1) * cw + off - 2, y * rh + rh * 0.55); g.lineTo(x * cw + off + cw / 2, (y + 1) * rh); g.lineTo(x * cw + off + 2, y * rh + rh * 0.55); g.fill();
+    }
+  }),
+  carpet: make((g, s) => {  // deep red runner with a gold border pattern
+    g.fillStyle = "#7B1E2B"; g.fillRect(0, 0, s, s);
+    g.strokeStyle = "#D9A441"; g.lineWidth = 6; g.strokeRect(10, 10, s - 20, s - 20);
+    g.strokeStyle = "rgba(217,164,65,0.6)"; g.lineWidth = 2; g.strokeRect(26, 26, s - 52, s - 52);
+    g.fillStyle = "#D9A441";
+    for (let i = 0; i < 2; i++) { g.beginPath(); g.moveTo(s / 2, s * (0.3 + i * 0.4)); g.lineTo(s * 0.62, s * (0.4 + i * 0.4)); g.lineTo(s / 2, s * (0.5 + i * 0.4)); g.lineTo(s * 0.38, s * (0.4 + i * 0.4)); g.fill(); }
+    noise(g, s, 500, 61, 0.14);
+  }),
+  grass: make((g, s) => {
+    const r = rng(71);
+    g.fillStyle = "#4F7A47"; g.fillRect(0, 0, s, s);
+    for (let i = 0; i < 1400; i++) { g.fillStyle = r() > 0.5 ? "rgba(110,160,80,0.35)" : "rgba(30,70,40,0.3)"; g.fillRect(r() * s, r() * s, 2, 3 + r() * 4); }
   })
 };

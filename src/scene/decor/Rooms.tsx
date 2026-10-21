@@ -1,21 +1,22 @@
 import { useLayoutEffect, useMemo, useRef } from "react";
 import { Color, InstancedMesh, Object3D } from "three";
-import { CORRIDOR_Z, GROUND_BACK_Z, PARTITION_Z, UPPER_Y, type Layout, type RoomRect } from "../../../shared/layout";
+import { COURT_Z, UPPER_Y, type Layout, type RoomRect } from "../../../shared/layout";
 import { C } from "../palette";
 import { Box, Cyl } from "../parts";
-import { GamingChair } from "../desk/gear";
-import { NearFade } from "../NearFade";
-import { lampMat } from "../materials";
 import { rng } from "../rng";
 import { toonGradient } from "../toon";
 import {
-  CoffeeStation, CoffeeTable, FloorLamp, HoloTable, Neon, PottedPlant, Printer3D, RobotArm, Rug, ServerRack, Sofa,
-  SteelShelf, StringLights, TV, VendingMachine, Whiteboard, Workbench, WaterCooler
-} from "./props";
+  Armor, Banner, Cauldron, Chandelier, CrystalBall, FloatingCandles, Fireplace, HousePoints, Lectern, OwlPerch, Orrery, Pensieve,
+  PotionShelf, SortingHat, Torch, Trunks, WizardChair
+} from "./magic";
+import { CoffeeTable, FloorLamp, PottedPlant, Rug, Sofa } from "./props";
 
 const HALF_PI = Math.PI / 2;
 type V3 = [number, number, number];
-const BOOK_COLORS = ["#C8553D", "#3E6EA8", "#E3B341", "#4C9A3F", "#8E5BB5", "#2F8F8A", "#D98A3D", "#B83C5A", "#5D6B7A"];
+const BOOK_COLORS = ["#8E1F2E", "#1F6B4A", "#2B4C9A", "#D9A441", "#6B3FA0", "#5C4331", "#B5651D", "#3E3E4A", "#9A2A5A"];
+/* The decor below was laid out for rooms whose back wall is at z = -8. Rooms elsewhere shift it by their own offset. */
+const OLD_BACK_Z = -8;
+const GROUND_BACK_Z = OLD_BACK_Z;
 
 /* A bookcase full of books drawn as one instanced mesh. Faces +z. */
 function Bookcase({ pos, rotY = 0, w = 2.0, h = 2.4, seed = 1 }: { pos: V3; rotY?: number; w?: number; h?: number; seed?: number }) {
@@ -33,187 +34,200 @@ function Bookcase({ pos, rotY = 0, w = 2.0, h = 2.4, seed = 1 }: { pos: V3; rotY
   }, [books]);
   return (
     <group position={pos} rotation={[0, rotY, 0]}>
-      <Box size={[w, h, 0.05]} pos={[0, h / 2, -0.22]} color={C.woodDark} />
-      {[-1, 1].map(s => <Box key={s} size={[0.06, h, 0.5]} pos={[s * (w / 2), h / 2, 0]} color={C.woodDark} />)}
-      {Array.from({ length: levels + 1 }, (_, l) => <Box key={l} size={[w, 0.05, 0.5]} pos={[0, 0.03 + l * 0.5, 0]} color={C.wood} />)}
+      <Box size={[w, h, 0.05]} pos={[0, h / 2, -0.22]} color="#2E2018" />
+      {[-1, 1].map(s => <Box key={s} size={[0.06, h, 0.5]} pos={[s * (w / 2), h / 2, 0]} color="#2E2018" />)}
+      {Array.from({ length: levels + 1 }, (_, l) => <Box key={l} size={[w, 0.05, 0.5]} pos={[0, 0.03 + l * 0.5, 0]} color="#5C4331" />)}
       <instancedMesh ref={ref} args={[undefined, undefined, books.length]} castShadow><boxGeometry args={[1, 1, 1]} /><meshToonMaterial gradientMap={toonGradient} /></instancedMesh>
     </group>
   );
 }
 
-function DevelopersDecor({ r, layout }: { r: RoomRect; layout: Layout }) {
+/* The Charms classroom: bookcases, a roaring fireplace, an orrery, armor on guard and banners on the walls. */
+function CharmsDecor({ r, layout }: { r: RoomRect; layout: Layout }) {
+  const dz = r.minZ - OLD_BACK_Z;
   const desks = layout.desks.filter(d => d.y === 0 && d.room >= 0 && layout.rooms[d.room] === r);
-  const back = GROUND_BACK_Z;
+  const back = GROUND_BACK_Z, cx = (r.minX + r.maxX) / 2;
   return (
     <group>
-      {/* server racks in the back-left corner, shelves along the back wall between them and the coffee corner */}
-      {[0, 1, 2].map(k => <ServerRack key={k} pos={[r.minX + 0.75 + k * 0.85, 0, back + 0.55]} seed={k + 1} />)}
-      <SteelShelf pos={[r.minX + 6.2, 0, back + 0.45]} w={2.6} seed={4} />
-      <SteelShelf pos={[r.minX + 9.4, 0, back + 0.45]} w={2.2} seed={5} />
-      <Whiteboard pos={[r.minX + 0.35, 0, -4.1]} rotY={HALF_PI} w={2.2} seed={9} />
-      <VendingMachine pos={[r.minX + 0.55, 0, -1.9]} rotY={HALF_PI} />
-      {/* coffee corner at the back-right, well away from where the desks' owners walk */}
-      <CoffeeStation pos={[r.maxX - 3.4, 0, back + 0.55]} />
-      <WaterCooler pos={[r.maxX - 5.1, 0, back + 0.5]} />
-      <PottedPlant pos={[r.maxX - 0.55, 0, -2.7]} scale={1.0} seed={3} />
-      <PottedPlant pos={[r.minX + 4.6, 0, -1.9]} scale={1.0} seed={7} />
-      {desks.map(d => (
-        <group key={d.x}>
-          <Rug pos={[d.x, 0.04, d.z + 0.2]} size={[3.8, 3.4]} color="#4A3A33" border="#B07A3A" />
-        </group>
-      ))}
+      {[0, 1].map(k => <Bookcase key={k} pos={[r.minX + 1.3 + k * 2.2, 0, back + 0.4]} seed={60 + k} />)}
+      <Fireplace pos={[cx + 1.0, 0, back + 0.4]} />
+      <Torch pos={[cx - 1.1, 2.3, back + 0.05]} /><Torch pos={[cx + 3.1, 2.3, back + 0.05]} />
+      <Orrery pos={[r.maxX - 1.5, 0, back + 1.3]} />
+      <Armor pos={[r.maxX - 0.7, 0, -2.4]} rotY={-HALF_PI} />
+      <Armor pos={[r.minX + 0.7, 0, -1.4]} rotY={HALF_PI} />
+      <Banner pos={[r.minX + 0.3, 2.3, -4.6]} rotY={HALF_PI} color={C.sapphire} trim="#C9D1D9" />
+      <Banner pos={[r.maxX - 0.3, 2.3, -4.6]} rotY={-HALF_PI} color={C.sapphire} trim="#C9D1D9" />
+      <Lectern pos={[r.minX + 2.0, 0, -1.4]} />
+      <PottedPlant pos={[r.maxX - 0.6, 0, -0.9]} scale={1.0} seed={3} />
+      {desks.map(d => <Rug key={d.x} pos={[d.x, 0.04, d.z + 0.2 - dz]} size={[3.8, 3.4]} color="#1F2F5A" border="#D9A441" />)}
+      <FloatingCandles area={[r.minX + 1, r.maxX - 1, -7, -0.5]} y={3.0} count={16} seed={11} />
     </group>
   );
 }
 
-function LabDecor({ r }: { r: RoomRect }) {
+/* The Potions dungeon: cauldrons on the floor, shelves of glowing bottles and a pensieve of silver memory. */
+function PotionsDecor({ r }: { r: RoomRect }) {
   const cx = (r.minX + r.maxX) / 2, back = GROUND_BACK_Z;
   return (
     <group>
-      <RobotArm pos={[r.minX + 1.1, 0, back + 1.4]} />
-      <Workbench pos={[cx + 0.9, 0, back + 0.5]} w={2.8} />
-      <Printer3D pos={[r.minX + 2.9, 0, back + 0.7]} />
-      <Printer3D pos={[r.maxX - 1.1, 0, back + 0.7]} />
-      <HoloTable pos={[r.minX + 1.35, 0, -2.7]} />
-      <Whiteboard pos={[r.minX + 0.3, 0, -4.9]} rotY={HALF_PI} w={2.0} seed={2} stickies={false} />
-      <PottedPlant pos={[r.maxX - 0.5, 0, -2.3]} scale={1.0} seed={6} />
-      <Rug pos={[cx, 0.04, -4.4]} size={[3.8, 3.4]} color="#E6DACB" border="#9C6ADE" />
+      <Cauldron pos={[r.minX + 1.3, 0, back + 1.4]} color="#6CFF8A" />
+      <Cauldron pos={[cx + 2.6, 0, back + 1.2]} color="#B07CFF" r={0.55} />
+      <Cauldron pos={[r.maxX - 1.2, 0, back + 1.5]} color="#5CD6FF" r={0.45} />
+      <PotionShelf pos={[cx - 2.4, 0, back + 0.4]} seed={3} />
+      <PotionShelf pos={[cx + 0.2, 0, back + 0.4]} w={2.0} seed={4} />
+      <Pensieve pos={[r.minX + 1.5, 0, -2.7]} />
+      <Trunks pos={[r.maxX - 1.2, 0, -2.4]} rotY={-0.4} />
+      <Torch pos={[r.minX + 2.6, 2.3, back + 0.05]} /><Torch pos={[r.maxX - 2.6, 2.3, back + 0.05]} />
+      <Banner pos={[r.minX + 0.3, 2.3, -4.9]} rotY={HALF_PI} color={C.emerald} trim="#C9D1D9" />
+      <PottedPlant pos={[r.maxX - 0.5, 0, -0.9]} scale={1.0} seed={6} />
+      <Rug pos={[cx, 0.04, -4.4]} size={[3.8, 3.4]} color="#2B3A2E" border="#6CFF8A" />
+      <FloatingCandles area={[r.minX + 1, r.maxX - 1, -7, -0.5]} y={2.9} count={12} seed={12} />
     </group>
   );
 }
 
+/* The Library: tall shelves, a reading nook, a lectern with a glowing book and an owl on a perch. */
 function LibraryDecor({ r }: { r: RoomRect }) {
   const cx = (r.minX + r.maxX) / 2;
   return (
     <group>
-      {[-6.2, -4.0, -1.8].map((z, i) => <Bookcase key={z} pos={[r.minX + 0.3, 0, z]} rotY={HALF_PI} w={2.0} seed={20 + i} />)}
-      <Bookcase pos={[cx - 3.4, 0, GROUND_BACK_Z + 0.4]} w={2.0} seed={31} />
-      <Bookcase pos={[cx + 3.0, 0, GROUND_BACK_Z + 0.4]} w={2.0} seed={32} />
-      <Rug pos={[cx, 0.03, -4.6]} size={[4.4, 3.4]} color="#6A2F32" border="#B8893A" />
-      <Sofa pos={[r.minX + 2.6, 0, -2.3]} w={2.4} color="#5A3A2C" accent="#E3B341" />
+      {[-6.2, -4.0, -1.8].map((z, i) => <Bookcase key={z} pos={[r.minX + 0.3, 0, z]} rotY={HALF_PI} w={2.0} h={3.0} seed={20 + i} />)}
+      <Bookcase pos={[cx - 3.4, 0, GROUND_BACK_Z + 0.4]} h={3.0} seed={31} />
+      <Bookcase pos={[cx + 3.0, 0, GROUND_BACK_Z + 0.4]} h={3.0} seed={32} />
+      <Bookcase pos={[cx - 1.2, 0, GROUND_BACK_Z + 0.4]} h={3.0} seed={33} />
+      <Rug pos={[cx, 0.03, -4.6]} size={[4.4, 3.4]} color="#4A1F2B" border="#D9A441" />
+      <Sofa pos={[r.minX + 2.6, 0, -2.3]} w={2.4} color="#5A1F2B" accent="#D9A441" />
       <CoffeeTable pos={[r.minX + 2.6, 0, -0.9]} />
+      <Lectern pos={[r.maxX - 1.6, 0, -1.2]} />
+      <OwlPerch pos={[r.maxX - 0.8, 0, -6.6]} />
+      <Torch pos={[cx + 1.2, 2.4, GROUND_BACK_Z + 0.05]} />
       <FloorLamp pos={[r.minX + 4.2, 0, -2.3]} />
-      <FloorLamp pos={[r.maxX - 0.6, 0, -6.8]} />
       <PottedPlant pos={[r.maxX - 0.6, 0, -0.9]} scale={1.1} seed={8} />
-      <StringLights a={[r.minX + 0.4, 3.35, GROUND_BACK_Z + 0.3]} b={[r.maxX - 0.4, 3.35, GROUND_BACK_Z + 0.3]} count={14} sag={0.35} />
+      <FloatingCandles area={[r.minX + 1, r.maxX - 1, -7, -0.5]} y={3.0} count={14} seed={13} />
     </group>
   );
 }
 
-/* The meeting room: one long table with a chair for everybody, a screen on a stand at one end, and a whiteboard. */
-function MeetingDecor({ layout }: { layout: Layout }) {
-  const m = layout.meeting!, r = m.room, { x: tx, z: tz, len, wid } = m.table;
+/* The Great Hall: one long oak table under a sky of floating candles, banners of the four houses, a fireplace and the hourglasses of house points. */
+function GreatHallDecor({ layout }: { layout: Layout }) {
+  const m = layout.meeting!, r = m.room, { x: tx, z: tz, len, wid } = m.table, dz = r.minZ - OLD_BACK_Z;
+  const houses = [C.crimson, "#E3B341", C.sapphire, C.emerald];
   return (
     <group>
-      <Rug pos={[tx, 0.04, tz]} size={[len + 2.6, wid + 3.4]} color="#7A4A34" border="#D9A441" />
+      <Rug pos={[tx, 0.04, tz]} size={[len + 2.6, wid + 3.4]} color="#5C1A24" border="#D9A441" />
       {/* the table */}
-      <Box size={[len, 0.07, wid]} pos={[tx, 0.76, tz]} color="#7A5234" />
-      <Box size={[len - 0.2, 0.025, wid - 0.2]} pos={[tx, 0.8, tz]} color="#8A6040" cast={false} />
-      {[-1, 1].map(sx => <Box key={sx} size={[0.1, 0.72, wid - 0.3]} pos={[tx + sx * (len / 2 - 0.45), 0.36, tz]} color="#3A3F48" />)}
-      <Box size={[len - 1.0, 0.08, 0.12]} pos={[tx, 0.3, tz]} color="#3A3F48" cast={false} />
-      {/* a chair, a cup and a notebook for each seat */}
+      <Box size={[len, 0.08, wid]} pos={[tx, 0.76, tz]} color="#5C3B26" />
+      <Box size={[len - 0.2, 0.025, wid - 0.2]} pos={[tx, 0.8, tz]} color="#6B4A2E" cast={false} />
+      <Box size={[len - 0.6, 0.02, 0.5]} pos={[tx, 0.82, tz]} color={C.crimson} cast={false} />
+      {[-1, 1].map(sx => <Box key={sx} size={[0.12, 0.72, wid - 0.3]} pos={[tx + sx * (len / 2 - 0.45), 0.36, tz]} color="#3A2A1E" />)}
+      {/* a chair, a goblet and a candle for each seat */}
       {m.seats.map((s, i) => {
         const back = s.heading === 0, edge = back ? tz - wid / 2 + 0.28 : tz + wid / 2 - 0.28;
         return (
           <group key={i}>
-            <group position={[s.x, 0, s.z]} rotation={[0, s.heading, 0]}><GamingChair main="#8A5A3C" accent="#D9A441" leather /></group>
-            <Box size={[0.3, 0.02, 0.22]} pos={[s.x - 0.05, 0.815, edge]} color="#F4EFE6" cast={false} />
-            <Cyl rt={0.04} rb={0.034} h={0.09} pos={[s.x + 0.32, 0.86, edge]} color={["#F4E1D2", "#D9A441", "#E8E2D6"][i % 3]} seg={10} />
-            {i % 2 === 0 && <Box size={[0.34, 0.02, 0.24]} pos={[s.x - 0.05, 0.835, edge]} rot={[0, back ? 0.1 : -0.1, 0]} color="#2B2F3A" cast={false} />}
+            <group position={[s.x, 0, s.z]} rotation={[0, s.heading, 0]}><WizardChair /></group>
+            <Cyl rt={0.045} rb={0.03} h={0.14} pos={[s.x + 0.3, 0.9, edge]} color={C.gold} seg={8} cast={false} />
+            <Box size={[0.3, 0.02, 0.22]} pos={[s.x - 0.1, 0.825, edge]} color="#E8DCC0" cast={false} />
           </group>
         );
       })}
-      <PottedPlant pos={[tx, 0.83, tz]} scale={0.36} seed={41} />
-      <Cyl rt={0.06} rb={0.06} h={0.2} pos={[tx + 0.7, 0.9, tz]} color="#7FC8FF" seg={10} />
-      {/* screen on a stand at the left end, whiteboard on the back wall */}
-      <group position={[tx - len / 2 - 1.15, 0, tz]} rotation={[0, Math.PI / 2, 0]}>
-        <Box size={[0.9, 0.06, 0.5]} pos={[0, 0.03, 0]} color="#2B2F3A" />
-        <Box size={[0.08, 1.4, 0.08]} pos={[0, 0.75, 0]} color="#3A3F48" />
-        <TV pos={[0, 1.55, 0.05]} w={1.9} h={1.1} hue={0.07} />
-      </group>
-      <Whiteboard pos={[tx + 1.2, 0, r.minZ + 0.3]} w={2.4} seed={14} stickies={false} />
-      <PottedPlant pos={[r.minX + 0.6, 0, r.minZ + 0.7]} scale={1.3} seed={42} />
-      <PottedPlant pos={[r.maxX - 0.6, 0, r.minZ + 0.7]} scale={1.2} seed={43} />
-      <FloorLamp pos={[r.maxX - 0.7, 0, -3.3]} />
-      {/* a long warm lamp over the table */}
-      <NearFade pitch perMesh min={4} max={11} floor={0.12}>
-        <Box size={[len - 0.8, 0.05, 0.12]} pos={[tx, 3.0, tz]} color="#2B2F3A" cast={false} />
-        {[-1, 0, 1].map(k => <mesh key={k} position={[tx + k * (len / 3.2), 2.9, tz]} material={lampMat}><sphereGeometry args={[0.16, 12, 8]} /></mesh>)}
-      </NearFade>
+      {[-1, 0, 1].map(k => (
+        <group key={k} position={[tx + k * (len / 3.4), 0.82, tz]}>
+          <Cyl rt={0.03} rb={0.03} h={0.3} pos={[0, 0.15, 0]} color="#F6EFD9" seg={6} cast={false} />
+          <mesh position={[0, 0.34, 0]}><coneGeometry args={[0.035, 0.12, 6]} /><meshBasicMaterial color="#FFB84D" /></mesh>
+        </group>
+      ))}
+      {/* the four house banners and the fireplace on the back wall */}
+      {houses.map((c, i) => <Banner key={i} pos={[r.minX + 1.4 + i * ((r.maxX - r.minX - 2.8) / 3), 2.3, r.minZ + 0.35]} color={c} trim={i === 1 ? "#2B2B33" : C.gold} h={2.4} />)}
+      <Fireplace pos={[r.minX + 0.5, 0, -2.0 + dz]} rotY={HALF_PI} w={2.2} h={2.0} />
+      <HousePoints pos={[tx + 0.4, 0, r.minZ + 1.0]} />
+      <Armor pos={[r.maxX - 0.7, 0, -1.6 + dz]} rotY={-HALF_PI} />
+      <Armor pos={[r.doorX - 2.6, 0, r.maxZ - 0.7]} rotY={Math.PI} />
+      <Armor pos={[r.doorX + 2.6, 0, r.maxZ - 0.7]} rotY={Math.PI} />
+      <SortingHat pos={[r.maxX - 2.2, 0, tz + 2.6]} />
+      <Torch pos={[r.maxX - 0.2, 2.2, -4.3 + dz]} rotY={-HALF_PI} />
+      {/* a sky of candles, and chandeliers over the table */}
+      <FloatingCandles area={[r.minX + 0.8, r.maxX - 0.8, r.minZ + 0.8, r.maxZ - 0.6]} y={3.0} count={46} seed={14} />
+      <Chandelier pos={[tx - len / 4, 3.7, tz]} r={0.7} n={8} drop={0.8} />
+      <Chandelier pos={[tx + len / 4, 3.7, tz]} r={0.7} n={8} drop={0.8} />
     </group>
   );
 }
 
-function SuiteDecor({ layout }: { layout: Layout }) {
-  const s = layout.suite!, Y = UPPER_Y, cx = (s.minX + s.maxX) / 2;
+/* The Headmaster's study on the tower's upper floor: shelves, a pensieve, an orrery, a phoenix perch and a crystal ball. */
+function StudyDecor({ r, layout }: { r: RoomRect; layout: Layout }) {
+  const Y = UPPER_Y, desk = layout.desks.find(d => d.y > 0);
   return (
     <group>
-      <Rug pos={[layout.desks.find(d => d.y > 0)!.x, Y + 0.03, -15.2]} size={[5.2, 3.8]} color="#2A2F3E" border="#C79A2B" />
-      {[0, 1, 2].map(k => <Bookcase key={k} pos={[s.minX + 1.3 + k * 2.2, Y, s.minZ + 0.4]} w={2.0} h={2.6} seed={50 + k} />)}
-      <Sofa pos={[s.minX + 2.3, Y, -11.9]} w={2.6} color="#2B2024" accent="#C79A2B" />
-      <CoffeeTable pos={[s.minX + 2.3, Y, -10.8]} />
-      <FloorLamp pos={[s.minX + 0.7, Y, -11.9]} />
-      <PottedPlant pos={[s.minX + 0.6, Y, s.minZ + 1.5]} scale={1.3} seed={9} />
-      <PottedPlant pos={[s.maxX - 0.6, Y, s.minZ + 1.0]} scale={1.2} seed={10} />
-      <Box size={[0.9, 0.05, 0.5]} pos={[s.minX + 0.8, Y + 0.85, -17.3]} color={C.woodDark} />
-      <Box size={[0.06, 0.85, 0.5]} pos={[s.minX + 0.4, Y + 0.425, -17.3]} color={C.steel} />
-      <Box size={[0.06, 0.85, 0.5]} pos={[s.minX + 1.2, Y + 0.425, -17.3]} color={C.steel} />
-      {[0, 1, 2].map(i => <Cyl key={i} rt={0.04} rb={0.035} h={0.24} pos={[s.minX + 0.5 + i * 0.12, Y + 1.0, -17.3]} color={["#3E8A5A", "#C8553D", "#E0A030"][i]} seg={8} cast={false} />)}
+      <Rug pos={[desk ? desk.x : r.minX + 3.2, Y + 0.03, r.minZ + 3.6]} size={[5.2, 3.8]} color="#3A1F4A" border="#D9A441" />
+      {[0, 1].map(k => <Bookcase key={k} pos={[r.minX + 1.3 + k * 2.2, Y, r.minZ + 0.4]} w={2.0} h={3.0} seed={50 + k} />)}
+      <Sofa pos={[r.minX + 2.3, Y, r.minZ + 5.6]} w={2.6} color="#2B1F3A" accent="#D9A441" />
+      <CoffeeTable pos={[r.minX + 2.3, Y, r.minZ + 6.6]} />
+      <CrystalBall pos={[r.minX + 2.3, Y + 0.42, r.minZ + 6.6]} />
+      <Pensieve pos={[r.minX + 5.6, Y, r.minZ + 6.2]} />
+      <Orrery pos={[r.minX + 0.9, Y, r.minZ + 7.4]} scale={0.8} />
+      <OwlPerch pos={[r.minX + 0.6, Y, r.minZ + 4.2]} color="#FF8A4C" />
+      <Banner pos={[r.minX + 0.3, Y + 2.3, r.minZ + 3.6]} rotY={HALF_PI} color="#3A1F4A" />
+      <Torch pos={[r.maxX - 0.2, Y + 2.2, r.minZ + 6.4]} rotY={-HALF_PI} />
+      <FloatingCandles area={[r.minX + 1, r.maxX - 1, r.minZ + 1, r.maxZ - 1]} y={Y + 3.0} count={14} seed={15} />
     </group>
   );
 }
 
-/* Furnishings for the three ground-floor rooms, the corridor and lobby, and the product suite. */
+/* The stair hall on the ground floor of the headmaster's tower. */
+function StairHallDecor({ r }: { r: RoomRect }) {
+  return (
+    <group>
+      <Torch pos={[r.minX + 0.3, 2.3, r.minZ + 3.6]} rotY={HALF_PI} />
+      <Banner pos={[r.minX + 0.3, 2.4, r.minZ + 6.2]} rotY={HALF_PI} color="#3A1F4A" />
+      <Armor pos={[r.minX + 1.0, 0, r.minZ + 1.0]} />
+      <Trunks pos={[r.minX + 3.0, 0, r.minZ + 1.2]} />
+      <FloatingCandles area={[r.minX + 0.8, r.minX + 6, r.minZ + 1, r.maxZ - 1]} y={3.1} count={8} seed={18} />
+    </group>
+  );
+}
+
+/* Furnishings for every building, the passages between them and the forecourt. */
 export function RoomsDecor({ layout }: { layout: Layout }) {
-  const { building: b, lobby } = layout;
+  const hall = layout.rooms.find(r => r.theme === "meeting");
+  const hx = hall ? (hall.minX + hall.maxX) / 2 : 0;
   return (
     <group>
-      {layout.rooms.map(r => (
-        <group key={r.id}>
-          {r.theme === "developers" && <DevelopersDecor r={r} layout={layout} />}
-          {r.theme === "lab" && <LabDecor r={r} />}
-          {r.theme === "library" && <LibraryDecor r={r} />}
-          {r.theme === "meeting" && layout.meeting && <MeetingDecor layout={layout} />}
-        </group>
-      ))}
-
-      {/* corridor: plants beside the glass columns and benches halfway between doors, so nothing blocks a door */}
-      {[b.minX + 0.9, ...layout.rooms.map(r => r.maxX - 0.9)].filter(x => layout.rooms.every(r => Math.abs(x - r.doorX) > 2.2) && x < lobby.minX - 0.5).map((x, i) => (
-        <PottedPlant key={x} pos={[x, 0, PARTITION_Z + 0.5]} scale={1.0} seed={i + 12} />
-      ))}
-      {layout.rooms.slice(0, -1).map((r, i) => {
-        const x = (r.doorX + layout.rooms[i + 1].doorX) / 2;
+      {layout.rooms.map(r => {
+        const dz = r.minZ - OLD_BACK_Z;
         return (
-          <group key={"bench" + r.id} position={[x, 0, FRONT_BENCH_Z]}>
-            <Box size={[1.8, 0.07, 0.45]} pos={[0, 0.45, 0]} color={C.woodLight} />
-            {[-0.75, 0.75].map(dx => <Box key={dx} size={[0.07, 0.45, 0.4]} pos={[dx, 0.225, 0]} color={C.steel} />)}
+          <group key={r.id}>
+            <group position={[0, 0, dz]}>
+              {r.theme === "developers" && <CharmsDecor r={r} layout={layout} />}
+              {r.theme === "lab" && <PotionsDecor r={r} />}
+              {r.theme === "library" && <LibraryDecor r={r} />}
+            </group>
+            {r.theme === "meeting" && layout.meeting && <GreatHallDecor layout={layout} />}
+            {r.level > 0 && <StudyDecor r={r} layout={layout} />}
+            {r.level > 0 && <StairHallDecor r={r} />}
           </group>
         );
       })}
-      {layout.rooms.map(r => (
-        <group key={"exit" + r.id}>
-          <Box size={[0.5, 0.16, 0.05]} pos={[r.doorX, 3.05, PARTITION_Z + 0.05]} color="#0E3A22" emissive={C.neonGreen} emissiveIntensity={1.2} cast={false} />
-          <Cyl rt={0.07} rb={0.07} h={0.3} pos={[r.maxX - 0.2, 0.9, PARTITION_Z + 0.3]} color={C.neonRed} seg={8} cast={false} />
+
+      {/* torches beside every doorway, on both the forecourt and the alley side */}
+      {layout.rooms.filter(r => r.theme !== "meeting").map(r => (
+        <group key={"arch" + r.id}>
+          <Torch pos={[r.doorX - 2.1, 2.1, r.maxZ + 0.32]} />
+          <Torch pos={[r.doorX + 2.1, 2.1, r.maxZ + 0.32]} />
         </group>
       ))}
 
-      {/* lobby: reception and a waiting corner by the lift */}
-      <group>
-        <Box size={[0.8, 1.1, 2.8]} pos={[lobby.maxX - 1.0, 0.55, -3.2]} color="#2B2F3A" />
-        <Box size={[1.0, 0.07, 3.0]} pos={[lobby.maxX - 1.0, 1.13, -3.2]} color={C.woodLight} />
-        <Neon size={[0.04, 0.05, 2.6]} pos={[lobby.maxX - 1.42, 0.3, -3.2]} color={C.neonCyan} />
-        <Box size={[0.4, 0.3, 0.05]} pos={[lobby.maxX - 1.0, 1.35, -3.9]} rot={[0, HALF_PI, 0]} color={C.black} />
-        <Sofa pos={[lobby.minX + 0.9, 0, -4.2]} rotY={HALF_PI} w={2.2} color="#3A4256" accent={C.hazard} />
-        <PottedPlant pos={[lobby.minX + 0.6, 0, -7.0]} scale={1.3} seed={20} />
-        <PottedPlant pos={[lobby.maxX - 0.6, 0, -0.6]} scale={1.2} seed={21} />
-        <Box size={[2.4, 0.012, 2.4]} pos={[(lobby.minX + lobby.maxX) / 2, 0.065, -2.0]} color="#2D323C" cast={false} />
-        <Box size={[1.6, 0.012, 0.05]} pos={[(lobby.minX + lobby.maxX) / 2, 0.075, -2.0]} color={C.hazard} cast={false} />
+      {/* the forecourt: a fountain, stone benches and potted plants */}
+      <group position={[hx, 0, COURT_Z + 4.4]}>
+        <Cyl rt={2.2} rb={2.4} h={0.5} pos={[0, 0.25, 0]} color={C.stoneLight} seg={20} />
+        <Cyl rt={1.9} rb={1.9} h={0.08} pos={[0, 0.5, 0]} color="#5CA8D8" seg={20} cast={false} />
+        <Cyl rt={0.25} rb={0.4} h={1.6} pos={[0, 1.0, 0]} color={C.stone} seg={10} />
+        <Cyl rt={0.8} rb={0.5} h={0.18} pos={[0, 1.7, 0]} color={C.stoneLight} seg={14} />
+        <Cyl rt={0.1} rb={0.12} h={0.6} pos={[0, 2.0, 0]} color={C.stone} seg={8} />
+        {[0, 1, 2, 3].map(i => <Box key={i} size={[1.8, 0.1, 0.5]} pos={[Math.sin(i * HALF_PI) * 4.0, 0.45, Math.cos(i * HALF_PI) * 4.0]} rot={[0, i * HALF_PI, 0]} color={C.stoneLight} />)}
       </group>
+      {layout.passages.map((x, i) => <PottedPlant key={x} pos={[x, 0, COURT_Z - 0.6]} scale={1.1} seed={i + 12} />)}
 
-      {layout.suite && <SuiteDecor layout={layout} />}
-      <group visible={false}><Box size={[0.01, 0.01, 0.01]} pos={[b.minX, 0, CORRIDOR_Z]} color="#000000" /></group>
     </group>
   );
 }
-
-const FRONT_BENCH_Z = 2.9;

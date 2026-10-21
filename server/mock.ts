@@ -1,7 +1,7 @@
 import divisions from "../divisions.json";
 import type { AgentConfig } from "../shared/agents";
 import type { AgentStatus, OfficeEvent } from "../shared/events";
-import { computeLayout, walkTime, type Layout } from "../shared/layout";
+import { computeLayout, deliveryTime, type Layout } from "../shared/layout";
 
 type Draft<T> = T extends unknown ? Omit<T, "ts"> : never;
 
@@ -125,10 +125,10 @@ export class MockSim {
       this.later(() => {
         this.emit({ type: "agent.handoff", from: id, to, task: next });
         const i = this.agents.findIndex(a => a.id === id), j = this.agents.findIndex(a => a.id === to);
-        const w = walkTime(this.layout, i, j) * 1000;
-        // Frontend: walk (w) + hand over (1.2s). Receiver starts just after, sender is back after a round trip.
-        this.later(() => this.runTask(to, next), w + 1300);
-        this.later(() => this.release(id), w * 2 + 1600);
+        const w = deliveryTime(this.layout, i, j) * 1000;
+        // Frontend: the sender casts, the familiar flies over and drops the letter (w). Receiver starts just after.
+        this.later(() => this.runTask(to, next), w + 300);
+        this.later(() => this.release(id), w + 600);
       }, 900);
     } else {
       this.later(() => this.release(id), 1800);

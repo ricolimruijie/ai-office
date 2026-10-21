@@ -26,18 +26,18 @@ The top bar shows a connection indicator (Live, Connecting, Offline). If the ser
 
 - Mouse: drag to orbit, right-drag to pan, wheel to zoom. Touch: one finger orbits, two fingers pan and pinch.
 - Keyboard: **W A S D** (or the arrow keys) walk the camera across the floor, **Q** and **E** turn it, **R** and **F** go up and down, **Shift** is faster.
-- Click a character, its name tag, or its row in the list to fly to it. The camera follows it as it walks (the lift and stairs included) until you move by hand. "Reset view" shows the whole building again.
+- Click a character, its name tag, or its row in the list to fly to it. The camera follows it as it walks (the tower stairs included) until you move by hand. "Reset view" shows the whole castle again.
 - Walls on the side facing the camera drop to a low base so you can always see in. Ceiling beams and hanging lamps fade when you look down on them or zoom close.
 
 **Giving tasks**
 
 - **By name.** Use the command bar at the bottom: `@nika i do wanna create a new project`, then Enter. Typing `@` lists the agents (arrow keys and Tab or Enter to pick). You can mention an agent by name (`@nika`), id (`@backend`) or position (`@product-manager`, `@technical-writer`, `@r&d`), and the mention can sit anywhere in the sentence.
 - Or select an agent, type a task in the right panel and press Assign. Both ways run through the same flow as the random tasks.
-- "Pause auto activity" stops the server from starting new random tasks. Tasks you assign still run. With nothing to do, everyone drifts to the lounge (see below).
+- "Pause auto activity" stops the server from starting new random tasks. Tasks you assign still run. With nothing to do, everyone drifts to the common room (see below).
 
-**Inside and outside view.** The "Inside view" button in the top bar (or the **V** key) switches to the outside view, like the Sims: the roofs settle onto the building, the walls stay full height on every side, and the people's name tags hide. Switch back and the roofs lift away and the walls facing the camera drop low again, so you can see in.
+**Inside and outside view.** The "Inside view" button in the top bar (or the **V** key) switches to the outside view, like the Sims: the roofs settle onto the castle, the walls stay full height on every side, and the people's name tags hide. Switch back and the roofs lift away and the walls facing the camera drop low again, so you can see in.
 
-**Meetings.** "Call meeting" in the top bar sends everyone to the meeting room: the product manager rides the lift down, and all six sit around one long table. Each takes a turn to speak (the mouth moves, they gesture) while the others listen and nod. "End meeting" sends everyone back. The table seats however many agents you have.
+**Meetings.** "Call meeting" in the top bar sends everyone to the Great Hall: the product manager comes down the tower stairs, and all six sit around one long table. Each takes a turn to speak (the mouth moves, they gesture) while the others listen and nod. "End meeting" sends everyone back. The table seats however many agents you have.
 
 **Time of day**
 
@@ -97,7 +97,7 @@ npm run send -- '{"type":"agent.handoff","from":"qa","to":"pm","task":"Release s
 npm run send -- '{"type":"model.call","agentId":"frontend","tier":"free"}'
 ```
 
-`ts` is added for you if you leave it out. The server relays any valid office event to every open browser. Handoffs only play when the sending agent is seated.
+`ts` is added for you if you leave it out. The server relays any valid office event to every open browser. A handoff is delivered by magic: the sender stays seated, casts a spell with a wand, and a familiar (an owl) flies the letter to the receiver's desk. It only plays when the sending agent is seated.
 
 ## Event contract
 
@@ -120,12 +120,12 @@ Each agent is a character with a personal name and a position. Edit `agents.json
 
 | Name | Position | Character | Division | Desk |
 | --- | --- | --- | --- | --- |
-| Nika | Product Manager | Ghost in a top hat and bow tie, with a monocle | Product Suite (upper floor) | Executive: L-shaped walnut desk, three curved monitors, gold RGB |
-| Nova | R&D | Zombie in a lab coat with goggles and stitches | R&D Lab | Lab: white bench, dual monitors, test tubes, violet RGB |
-| Lyra | Technical Writer | Ghost with a hair bun, round glasses and a scarf | Docs Library | Writer: oak desk, curved ultrawide, lamp, books, soft pink RGB |
-| Atlas | Backend | Zombie in a hoodie with headphones and an exposed bone | Developers Hall | Backend: two vertical monitors and an ultrawide, two PCs, green RGB |
-| Pixel | Frontend | Ghost in a pink hoodie and beanie | Developers Hall | Frontend: three monitors, drawing tablet, figurines, pink and cyan RGB |
-| Sentry | QA | Zombie in a hi-vis vest, cap and bandage | Developers Hall | QA: 2x2 monitor wall, phones under test, signal tower, red and white RGB |
+| Nika | Product Manager | Ghost in a top hat and bow tie, with a monocle | Headmaster's Tower (upper floor) | Executive: L-shaped walnut desk, three curved monitors, gold RGB |
+| Nova | R&D | Zombie in a lab coat with goggles and stitches | Potions Dungeon | Lab: white bench, dual monitors, test tubes, violet RGB |
+| Lyra | Technical Writer | Ghost with a hair bun, round glasses and a scarf | The Library | Writer: oak desk, curved ultrawide, lamp, books, soft pink RGB |
+| Atlas | Backend | Zombie in a hoodie with headphones and an exposed bone | Charms Classroom | Backend: two vertical monitors and an ultrawide, two PCs, green RGB |
+| Pixel | Frontend | Ghost in a pink hoodie and beanie | Charms Classroom | Frontend: three monitors, drawing tablet, figurines, pink and cyan RGB |
+| Sentry | QA | Zombie in a hi-vis vest, cap and bandage | Charms Classroom | QA: 2x2 monitor wall, phones under test, signal tower, red and white RGB |
 
 Fields: `id`, `name`, `position`, `role`, `color`, `tasks`, `division`, `desk` (`executive`, `lab`, `writer`, `backend`, `frontend`, `qa`) and `look`.
 
@@ -133,11 +133,11 @@ Fields: `id`, `name`, `position`, `role`, `color`, `tasks`, `division`, `desk` (
 
 **The characters.** Every character has a full skeleton: pelvis, spine, chest, neck and head, shoulders, elbows, wrists, five-finger hands, and hips, knees and ankles. Ghosts have a swaying tail instead of legs: they float, and when they travel they fly, leaning into the flight with the tail streaming behind and the arms trailing, instead of stepping. Zombies still walk, arms out in front. The face has eyelids that blink, pupils that follow the camera, eyebrows, cheeks and a mouth that curves from smile to frown and opens. Expression follows what the character is doing: calm and curious when idle, a raised brow and a glance up when thinking, narrowed eyes while working, a big grin when done, wide eyes, worried brows and a sweat drop on an error, and laughing fits while playing in the lounge.
 
-**Divisions and rooms.** Each agent's `division` matches an id in `divisions.json`. Every ground-floor division (`level: 0`) gets its own glass-walled room (the order in `divisions.json` is the order along the corridor: Docs, R&D, the Meeting Room, then Developers). A division with `"shared": true`, like the meeting room, exists even with nobody assigned to it, with a sliding door onto the corridor, sized by how many agents sit in it. A `level: 1` division goes in the upper block behind the building. The `theme` (`executive`, `library`, `lab`, `developers`) picks the floor and furniture. Desks, room sizes and walking routes are generated from this data (`shared/layout.ts`), so moving an agent to another division just works.
+**Divisions and rooms.** Each agent's `division` matches an id in `divisions.json`. Every division becomes its own stone building, in one of two rows (the `theme` decides which). The front row faces the forecourt: Charms Classroom (`developers`), the Great Hall (`meeting`) and the Potions Tower (`lab`). The back row faces a lane behind them: the Library (`library`), the Common Room (always there) and the Headmaster's Tower (`executive`, a `level: 1` division whose study is on the upper floor, reached by a spiral staircase inside the tower). A division with `"shared": true`, like the Great Hall, exists even with nobody assigned to it. Building sizes, desks and walking routes are generated from this data (`shared/layout.ts`), so moving an agent to another division just works.
 
-**The building.** A closed industrial building, warmly lit (golden daylight, warm wooden floors, lamps that glow even by day, a purple-and-amber night): brick ground floor with factory windows, a concrete upper block on a formwork base, steel beams and pendant lamps, hazard-stripe markings, and a yard with containers, a chimney and silos. Glass partitions separate the rooms. The sliding doors open by themselves when someone walks up to them (a green light above shows it). A glass lift at the right-hand end joins the floors: its cab really travels and its doors open and close. Characters line up near the doors while they wait. When the doors open, everyone queued for that floor steps in and rides together (up to four), the lift holds the doors a moment for anyone running up behind, and they step out one after another at the other end. Handoffs between floors use it, and take noticeably longer.
+**The castle.** A cluster of separate stone buildings joined by open lanes and passages, warmly lit (golden daylight, dark oak beams, candles that hover in the air, torches on the walls, glowing windows and a purple dusk). Each building has an arched doorway in an open arcaded front, so you can always see in; the Great Hall has a grand gate with steps, banners and torches. Round turrets stand on the outer corners and every roof is slate: gabled over the halls, pointed over the towers. The grounds have a fountain in the forecourt, a stone bridge over the black lake, a dark pine forest, a gamekeeper's hut with pumpkins, a willow, a Quidditch pitch with stands and hoops, and far mountains. Handoffs fly over all of it, so only trips to the common room and the Great Hall use the lanes.
 
-**The game lounge.** On the upper floor: arcade cabinets, a billiard table, two sim-racing rigs, a bar with stools, a TV nook with bean bags and a PlayStation corner with a sofa, plus neon signs, string lights and a mirror ball. When a character has been idle for several seconds it gets up, rides the lift and picks an activity: it shoots pool with a cue, grips a sim-racing wheel, thumbs a controller, mashes arcade buttons, sips a drink at the bar or laughs at the TV. After a while it may wander to something else. When work arrives it hurries back to its desk.
+**The common room.** Behind the Great Hall: Exploding Snap tables, a wizard chess board, two broom practice mounts, armchairs round a fireplace, a scrying nook with a pensieve and a butterbeer bar, under floating candles. When a character has been idle for several seconds it gets up, walks there and picks an activity: it directs the chess pieces with a long wand, grips the broom, holds a crystal in the scrying nook, plays Exploding Snap, sips butterbeer at the bar or relaxes by the fire. After a while it may wander to something else. When work arrives it hurries back to its desk.
 
 ## Docs
 
@@ -152,16 +152,16 @@ divisions.json         divisions, their level and room theme
 shared/                code used by both web app and server
   events.ts            the event contract and runtime guards
   mentions.ts          @name parsing (web command bar and Discord)
-  layout.ts            floor plan, desks, lift, lounge spots, walking routes, walk time
+  layout.ts            the castle plan, desks, common-room spots, lane routes, familiar flight time
 server/                mock WebSocket server (ws)
   index.ts, mock.ts    the random activity simulation
   discord/             optional Discord bot (commands, channels, threads, status board)
 src/
   state/               Zustand store and ingest()
   events/              swappable event source (WebSocket implementation)
-  scene/               building, lift, doors, camera, sky and lighting, yard
+  scene/               buildings, arches, doors, roofs, stair tower, camera, sky and lighting, grounds
     desk/              gaming workstations and the shared RGB lighting
-    decor/             room furniture and the game lounge
+    decor/             room furniture, magical props and the common room
   characters/          rigged ghost and zombie, poses and emotions, walking, lounge behavior
   ui/                  top bar, agent list, agent panel, name tags, CSS
 scripts/send-event.mjs test event sender
@@ -174,4 +174,4 @@ The scene and UI only know `ingest(event)` and the `OfficeSource` interface (`sr
 
 - If your backend speaks the same events over WebSocket, set `VITE_EVENT_URL=wss://your-backend/events` and remove `dev:server` from the `dev` script.
 - Otherwise write another `OfficeSource` (SSE, polling, anything) and export it from `src/events/index.ts`. It must call back with valid events and accept `task.assign`, `sim.pause` and `sim.resume` in `send()`.
-- Handoff timing: the mock server waits for the walk using `walkTime()` from `shared/layout.ts` (plus a 1.2 s hand-over). A real backend can do the same, or simply not care, since the sender walks whenever a handoff event arrives.
+- Handoff timing: the mock server waits for the familiar using `deliveryTime()` from `shared/layout.ts`. A real backend can do the same, or simply not care, since the sender casts whenever a handoff event arrives.
