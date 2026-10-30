@@ -1,24 +1,22 @@
-# Agent Office
+# AI Office Frontend
 
-A local 3D office where each character is one of your AI agents. This is the 3D layer only. Everything is driven by mock events from a small WebSocket server, so a real agent backend can replace it later without touching the 3D code.
+A local 3D office where each character is one of your AI agents. This repo is the 3D layer only. It listens to a WebSocket event stream, and the backend lives in its own repo, [ai-office-backend](https://github.com/ricolimruijie/ai-office-backend) (a mock simulation plus an optional Discord bot). Any server that speaks the event contract below can replace it without touching the 3D code.
 
 `agent-office.html` is the original single-file prototype, kept for reference.
 
 ## Run it
 
 ```bash
+# 1. Backend (separate repo)
+git clone https://github.com/ricolimruijie/ai-office-backend && cd ai-office-backend
+npm install && npm run dev        # ws://localhost:8787
+
+# 2. Frontend (this repo)
 npm install
-npm run dev
+npm run dev                       # http://localhost:5173
 ```
 
-This starts both processes:
-
-| Process | URL | What it is |
-| --- | --- | --- |
-| Web app (Vite) | http://localhost:5173 | The office |
-| Mock event server | ws://localhost:8787 | Random agent activity |
-
-The top bar shows a connection indicator (Live, Connecting, Offline). If the server is down the app keeps retrying. `npm run build` makes a production build and `npm run typecheck` runs the type checker.
+The top bar shows a connection indicator (Live, Connecting, Offline). If the backend is down the app keeps retrying. To use another backend URL, set `VITE_EVENT_URL` (for example `VITE_EVENT_URL=wss://your-backend/events npm run dev`). `npm run build` makes a production build and `npm run typecheck` runs the type checker.
 
 ## Use it
 
@@ -52,56 +50,13 @@ The sky, sun, shadows and lights follow your computer's clock. By day the sun cr
 | `?lounge=off` | No trips to the lounge (meetings still work) |
 | `?meeting=1` | Start with a meeting already called |
 
-## Discord
-
-The office can be driven from a Discord server. The bot runs inside the mock server and connects outward to Discord, so no public URL is needed.
-
-**Setup (once)**
-
-1. Create the bot at https://discord.com/developers/applications and invite it to your server (scopes `bot` and `applications.commands`). Turn on **Message Content Intent** on the Bot tab.
-2. Open `.env` (created from `.env.example`) and paste the bot token after `DISCORD_TOKEN=`. The server and channel ids are already filled in. Never commit `.env` or share the token.
-3. Recommended: add your own Discord user id to `DISCORD_ALLOWED_USER_IDS` (comma-separated for several people) so only they can give tasks.
-4. Restart `npm run dev`. The log should say `[discord] ready as ...`.
-5. The bot needs these permissions: View Channels, Send Messages, Send Messages in Threads, Create Public Threads, Embed Links, Add Reactions, Read Message History, Manage Channels, Manage Webhooks, Manage Messages, Pin Messages. If any are missing, the log prints a ready-made invite link. Open it and authorize again, then restart `npm run dev`.
-
-**What the bot sets up**
-
-On start it creates (or reuses) an **Agent Office** category with:
-
-- `#status-board`: one pinned message that updates itself every few seconds with every agent's status and task. The bot's own status line also shows how many agents are working.
-- `#alerts`: errors from any agent.
-- One channel per agent (`#nika`, `#nova`, `#lyra`, `#atlas`, `#pixel`, `#sentry`). Everything you type in a agent's channel is a task for that agent, no `@` needed.
-
-Your original feed channel keeps working too: type `@nika ...` there.
-
-**Use it**
-
-- Type `@nika i do wanna create a new project` in the feed channel, or just `create a new project` in `#nika`. Or use `/task agent:nika task:...` (the agent list autocompletes). `/agents` shows what every agent is doing.
-- Every task gets its **own thread** under your message. Progress (picked up, steps, handoffs, finished) is posted there, and the thread follows the work when a agent hands off to another. Threads archive themselves after an hour.
-- Messages come from each agent under its own **name and avatar**, for example "Nika · Product Manager". Avatars are generated pictures from the free DiceBear service, which Discord loads for you. To use your own, add `"avatar": "https://..."` to an agent in `agents.json`.
-- A agent's own channel keeps a short history of its tasks even when you gave them elsewhere, and errors also appear in `#alerts`.
-- 👀 means started, ⏳ means the agent was busy and the task is queued (it starts by itself, up to 5 waiting per agent), ❌ means its queue is full, 🚫 means you are not allowed.
-- By default only tasks given from Discord are reported. Set `DISCORD_FEED=all` to also post the random mock activity to the feed channel.
-- Without a permission the bot cannot get, it falls back gracefully (for example to the feed channel when it cannot create channels).
-
-Settings live in `.env` (see `.env.example`). Without `DISCORD_TOKEN` the bot stays off and everything else works as before.
-
 ## Send a test event
 
-With `npm run dev` running:
-
-```bash
-npm run send -- '{"type":"agent.status","agentId":"backend","status":"error","task":"Test"}'
-npm run send -- '{"type":"agent.log","agentId":"qa","message":"Hello from the terminal"}'
-npm run send -- '{"type":"agent.handoff","from":"qa","to":"pm","task":"Release sign-off"}'
-npm run send -- '{"type":"model.call","agentId":"frontend","tier":"free"}'
-```
-
-`ts` is added for you if you leave it out. The server relays any valid office event to every open browser. A handoff is delivered by magic: the sender stays seated, casts a spell with a wand, and a familiar (an owl) flies the letter to the receiver's desk. It only plays when the sending agent is seated.
+Test events are sent from the backend repo (`npm run send -- '<event json>'`, see its README). The server relays any valid office event to every open browser. A handoff is delivered by magic: the sender stays seated, casts a spell with a wand, and a familiar (an owl) flies the letter to the receiver's desk. It only plays when the sending agent is seated.
 
 ## Event contract
 
-Defined once in `shared/events.ts`. Every event has `ts` (ms since epoch).
+Owned by the backend repo (`contract/events.ts`) and copied here to `shared/events.ts` by `npm run sync-contract`. Never edit the copy. Every event has `ts` (ms since epoch).
 
 ```ts
 { type: "agent.status",  agentId, status: "idle" | "thinking" | "working" | "done" | "error", task? }
@@ -110,13 +65,13 @@ Defined once in `shared/events.ts`. Every event has `ts` (ms since epoch).
 { type: "model.call",    agentId, tier? }
 ```
 
-The browser also sends these messages to the server (they are not office events): `task.assign { agentId, text }`, `sim.pause`, `sim.resume`.
+The browser also sends these messages to the backend (they are not office events): `task.assign { agentId, text }`, `sim.pause`, `sim.resume`.
 
 All office state changes go through one function, `ingest(event)` in `src/state/ingest.ts`.
 
 ## Agents
 
-Each agent is a character with a personal name and a position. Edit `agents.json`. `name` is the `@handle` you type in the command bar and must be unique.
+Each agent is a character with a personal name and a position. Edit `agents.json`. `name` is the `@handle` you type in the command bar and must be unique. The backend has its own `agents.json` with the same `id`, `name`, `position`, `role` and `color`; keep them in sync.
 
 | Name | Position | Character | Division | Desk |
 | --- | --- | --- | --- | --- |
@@ -149,13 +104,11 @@ Fields: `id`, `name`, `position`, `role`, `color`, `tasks`, `division`, `desk` (
 ```
 agents.json            agent config (name, position, division, look, desk, tasks)
 divisions.json         divisions, their level and room theme
-shared/                code used by both web app and server
-  events.ts            the event contract and runtime guards
-  mentions.ts          @name parsing (web command bar and Discord)
+shared/                code that does not depend on React
+  events.ts            GENERATED copy of the backend's event contract
+  mentions.ts          GENERATED copy of the backend's @name parsing
+  agents.ts            agent, look and division types
   layout.ts            the castle plan, desks, common-room spots, lane routes, familiar flight time
-server/                mock WebSocket server (ws)
-  index.ts, mock.ts    the random activity simulation
-  discord/             optional Discord bot (commands, channels, threads, status board)
 src/
   state/               Zustand store and ingest()
   events/              swappable event source (WebSocket implementation)
@@ -164,14 +117,14 @@ src/
     decor/             room furniture, magical props and the common room
   characters/          rigged ghost and zombie, poses and emotions, walking, lounge behavior
   ui/                  top bar, agent list, agent panel, name tags, CSS
-scripts/send-event.mjs test event sender
+scripts/sync-contract.mjs  copies the contract from ../ai-office-backend
 docs/                  architecture and coding standards
 ```
 
-## Connect a real backend later
+## Connect a real backend
 
 The scene and UI only know `ingest(event)` and the `OfficeSource` interface (`src/events/EventSource.ts`).
 
-- If your backend speaks the same events over WebSocket, set `VITE_EVENT_URL=wss://your-backend/events` and remove `dev:server` from the `dev` script.
+- If your backend speaks the same events over WebSocket, set `VITE_EVENT_URL=wss://your-backend/events`.
 - Otherwise write another `OfficeSource` (SSE, polling, anything) and export it from `src/events/index.ts`. It must call back with valid events and accept `task.assign`, `sim.pause` and `sim.resume` in `send()`.
-- Handoff timing: the mock server waits for the familiar using `deliveryTime()` from `shared/layout.ts`. A real backend can do the same, or simply not care, since the sender casts whenever a handoff event arrives.
+- Handoff timing: the frontend plays the cast and the owl flight (about 4 to 10 s, from `deliveryTime()` in `shared/layout.ts`) whenever a handoff event arrives. The backend can start the receiver whenever it likes.

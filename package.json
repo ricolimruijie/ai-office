@@ -1,36 +1,29 @@
 {
-  "name": "agent-office",
+  "name": "ai-office-frontend",
   "private": true,
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently -k -n web,server -c blue,green \"npm:dev:web\" \"npm:dev:server\"",
-    "dev:web": "vite",
-    "dev:server": "tsx watch --env-file-if-exists=.env server/index.ts",
+    "dev": "vite",
     "build": "tsc -b && vite build",
     "typecheck": "tsc -b",
-    "send": "node scripts/send-event.mjs"
+    "sync-contract": "node scripts/sync-contract.mjs"
   },
   "devDependencies": {
     "@types/node": "^26.6.4",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@types/three": "^0.186.0",
-    "@types/ws": "^8.18.2",
     "@vitejs/plugin-react": "^6.1.2",
-    "concurrently": "^10.0.5",
-    "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vite": "^8.3.2"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",
     "@react-three/fiber": "^9.8.1",
-    "discord.js": "^14.27.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "three": "^0.186.1",
-    "ws": "^8.22.0",
     "zustand": "^5.0.15"
   }
 }

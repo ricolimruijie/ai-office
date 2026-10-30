@@ -35,11 +35,9 @@ export interface AgentConfig {
   look: Look;
   /** Layout and style of the agent's gaming workstation. */
   desk: DeskStyle;
-  /** Optional avatar image URL for Discord. Defaults to a generated robot picture. */
-  avatar?: string;
 }
 
-/* A division gets its own room. Level 0 is the ground floor, level 1 is the upper floor (reached by the lift). */
+/* A division gets its own room. Level 0 is the ground floor, level 1 is the upper floor (reached by the stairs). */
 export interface DivisionConfig {
   id: string;
   name: string;

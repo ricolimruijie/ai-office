@@ -10,5 +10,5 @@
     "resolveJsonModule": true,
     "types": ["node"]
   },
-  "include": ["server", "shared", "vite.config.ts", "agents.json"]
+  "include": ["vite.config.ts"]
 }

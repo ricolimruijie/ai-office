@@ -11,7 +11,7 @@ Agent Office is split into three layers that only talk through one contract.
 
 ## The event contract
 
-`shared/events.ts` is the only definition of what can change the office:
+`shared/events.ts` is the only definition of what can change the office. It is a generated copy of the backend's `contract/events.ts` (run `npm run sync-contract`, never edit it here):
 
 | Event | Effect |
 | --- | --- |
@@ -51,7 +51,7 @@ Characters read the store with `getState()` inside `useFrame`, so a status chang
 
 ## Layout, routes and delivery timing
 
-`shared/layout.ts` is pure geometry used by both sides (the 3D scene and the mock server). It turns `agents.json` and `divisions.json` into a castle:
+`shared/layout.ts` is pure geometry used by the 3D scene. It turns `agents.json` and `divisions.json` into a castle:
 
 - **Two rows of buildings.** The front row (Charms Classroom, Great Hall, Potions Tower) faces the forecourt lane (`COURT_Z`). The back row (Library, Common Room, Headmaster's Tower) faces the alley lane (`ALLEY_Z`) behind them. The `theme` of a division picks its row and its order. The common room always exists and stands straight behind the Great Hall.
 - **Passages.** Gaps between the front-row buildings (`layout.passages`) join the forecourt to the alley. Everyone walks along those two lanes and the passages.
@@ -61,7 +61,7 @@ Characters read the store with `getState()` inside `useFrame`, so a status chang
 - **Routes.** `routeToSpot`, `routeFromSpot` and `routeSpotToSpot` build a path from the chair out of the room (down the stairs for a tower), along the lanes (through the nearest passage when the rows differ), and into the spot's room. Each spot's `via` list starts just inside its doorway.
 - `deliveryTime()` estimates how long a familiar delivery takes: the summoning spell, the flight (`familiarFlight`, a straight arc at `FAMILIAR_SPEED`) and the landing.
 
-The mock server calls `deliveryTime()` to decide when the receiver starts working, so the frontend never has to report arrival. The cast and landing pauses are the constants `SUMMON_S` and `DELIVER_S` in `shared/layout.ts`.
+The backend does not know about this geometry. The frontend plays the cast and the owl flight (about 4 to 10 s) whenever a `agent.handoff` event arrives, and the mock backend waits a random 4 to 10 s before starting the receiver.
 
 **Behavior away from the desk** (`src/characters/LoungeBehavior.tsx`): a throttled loop that watches each agent's status and the `meeting` flag. After an idle spell it sends the character to a free lounge spot, switches spots now and then, and sends it home when its status leaves idle. When a meeting is called every character goes to its seat (from the desk or from the lounge) and goes home when it ends. It never touches the event contract.
 
@@ -99,32 +99,13 @@ The look is cel-shaded: every material is a `MeshToonMaterial` with a 3-step gra
 
 `src/ui/CommandBar.tsx` turns `@nika create a new project` into a `task.assign` message. The parsing is in `shared/mentions.ts` (pure functions: `parseCommand`, `findAgent`, `suggest`). A mention matches name, then id, then position, ignoring case and punctuation. It sends through `assignTask()` in `src/events/actions.ts` like the drawer form does, so the command bar and the event source stay decoupled.
 
-## Discord bot
-
-`server/discord/` is a second front end for the same flow, not a new source of truth. It runs in the server process and is split by job:
-
-| File | Job |
-| --- | --- |
-| `index.ts` | Connects, handles messages and slash commands, follows each task, reacts to events |
-| `structure.ts` | Finds or creates the Agent Office category, `#status-board`, `#alerts` and one channel per agent |
-| `poster.ts` | Posts as a agent (webhook with its name and avatar, bot message as fallback), in order |
-| `board.ts` | The pinned live status message and the bot's presence text |
-| `pure.ts` | No Discord objects: `routeText`, `boardLines`, `stepText`, `avatarFor`. Easy to test |
-
-How it flows:
-
-- Discord to office: `/task`, `@name ...` in the feed channel, or any message in a agent channel calls `sim.assign()`, exactly like the web `task.assign` message. A thread is opened under the message first, because `assign()` fires its events before it returns.
-- Office to Discord: every broadcast event is also passed to `bot.onEvent()`. Each running Discord task has a context (channel and thread). Events for that agent are posted into its thread, with short lines mirrored to the agent's own channel and `#alerts`. A handoff moves the context to the receiver, so one thread follows the whole chain. Queued tasks wait in a per-agent list that matches the mock's queue.
-- Missing permissions never crash it. It logs what is missing plus an invite link, and falls back (no channels means feed only, no webhook means bot messages, no thread means the channel).
-- With a real agent backend later, keep the bot, feed it that backend's events, and replace `assign` with a call to it.
-
 ## Name tags
 
 Tags are plain DOM buttons (`src/ui/NameTags.tsx`) moved each frame by `TagProjector`, which projects each 3D anchor to screen space. drei's `<Html>` was avoided because its portal root fails to render under React 19 here.
 
 ## Swapping the backend
 
-Implement `OfficeSource` (`src/events/EventSource.ts`) and export it from `src/events/index.ts`, or set `VITE_EVENT_URL`. Nothing in `scene/`, `characters/`, `ui/` or `state/` needs to change.
+Set `VITE_EVENT_URL` to point at another server, or implement `OfficeSource` (`src/events/EventSource.ts`) and export it from `src/events/index.ts`. Nothing in `scene/`, `characters/`, `ui/` or `state/` needs to change.
 
 ## Where to change things
 
@@ -141,10 +122,9 @@ Implement `OfficeSource` (`src/events/EventSource.ts`) and export it from `src/e
 | Change the staircase | `shared/layout.ts` (`climb`), `StairTower.tsx` (look) |
 | Change the meeting room or its seating | `shared/layout.ts` (`meeting`), `decor/Rooms.tsx` |
 | Change the sky, sun or lamps by time | `scene/timeOfDay.ts`, `Lighting.tsx` |
-| Add an event type | `shared/events.ts`, then `ingest.ts`, then `isOfficeEvent` |
+| Add an event type | backend `contract/events.ts`, `npm run sync-contract`, then `ingest.ts` |
 | Change what an event does | `src/state/ingest.ts` |
 | Change a status color or label | `src/config/status.ts` |
 | Change how @mentions are matched | `shared/mentions.ts` |
-| Change mock behavior | `server/mock.ts` |
-| Change Discord commands, channels or what gets posted | `server/discord/` |
+| Change events, mention parsing, mock behavior or Discord | the backend repo (`contract/`, `server/`), then `npm run sync-contract` here |
 | Change panels or theme | `src/ui/*.tsx`, `theme.css`, `panels.css` |
